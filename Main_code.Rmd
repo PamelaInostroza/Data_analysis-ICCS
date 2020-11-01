@@ -4,11 +4,13 @@ output:
   html_document:
     toc: TRUE
     toc_float: TRUE
+editor_options: 
+  chunk_output_type: console
 ---
 
-# Read SPSS files to R and Joining them
+# Files available
 
-Select countries and years (cycle) to analyse 
+Selected countries and years (cycle) to analyse 
 
 ```{r setup, echo = FALSE, message = FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
@@ -26,17 +28,17 @@ Files <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "Files")
 
 CNT = c("ITA","CHL") #,"BFL","PER"
 
-years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% select(Country, AlphaCode, year) 
+years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% dplyr::select(Country, AlphaCode, year) 
 
 ```
 
-```{r namesfiles}
+```{r namesfiles, comment=""}
 filenames <- NULL
-print("Countries selected and Year participation in ICCS: ")
+print("Countries selected and year participation in ICCS:")
 
 for (cnt in CNT) {
 
-  yearf <- years %>% filter(AlphaCode == cnt) %>% arrange(as.numeric(year))
+  yearf <- years %>% filter(AlphaCode == cnt & year != 22) %>% arrange(as.numeric(year))
   
   print(paste0(unique(yearf$Country), " :", paste(sort(ifelse(yearf$year == "99", paste0("19",yearf$year), paste0("20",yearf$year))), collapse = " ")))
 
@@ -44,9 +46,9 @@ for (cnt in CNT) {
  
     if (year == "99") Folder <- paste0("CivED19",year,"_IDB_SPSS_G8") else
       Folder <- paste0("ICCS20",year,"_IDB_SPSS")
-    CountryEU <- Countries %>% filter(year == year & !is.na(EUQ)) %>% select(AlphaCode)
-    CountryLA <- Countries %>% filter(year == year & !is.na(LAQ)) %>% select(AlphaCode) 
-    File <- Files %>% filter(!is.na(ToUse)) %>% select(Filename)
+    CountryEU <- Countries %>% filter(year == year & !is.na(EUQ)) %>% dplyr::select(AlphaCode)
+    CountryLA <- Countries %>% filter(year == year & !is.na(LAQ)) %>% dplyr::select(AlphaCode) 
+    File <- Files %>% filter(!is.na(ToUse)) %>% dplyr::select(Filename)
     if (year == "99") cycle = "f2" else if (year == "09") cycle = "C2" else if (year == "16") cycle = "C3" else 
       if (year == "22") cycle = "C4"
     if (year == "99") {
@@ -67,7 +69,7 @@ filenames <- filenames[order(substr(filenames,24,26),substr(filenames,30,31))]
 rm(list = c("yearf", "cnt", "cycle", "Folder", "year", "File", "CountryEU", "CountryLA"))
 ```
 
-```{r read_spss}
+```{r read_spss, eval=FALSE}
 ICGC1 <- NULL
 ICGC2 <- NULL
 ICGC3 <- NULL
@@ -81,8 +83,6 @@ ISEC2 <- NULL
 ISEC3 <- NULL
 ISLC2 <- NULL
 ISLC3 <- NULL
-
-paste0("Files availables: ")
 
 for (nc in 1:length(filenames)) {
   
@@ -142,7 +142,6 @@ for (nc in 1:length(filenames)) {
       ISLC3 <- rbind(ISLC3, dataset)
     }
   }
-  print(filenames[nc])
 }
 ISGC1$cycle <- "C1"
 ISGC2$cycle <- "C2"
@@ -160,19 +159,19 @@ ISLC3$cycle <- "C3"
 rm(list = c("dataset","nc","filenames"))
 ```
 
-```{r codebooks}
+```{r codebooks, eval=FALSE}
 
 #Joining Questionnaires for Students 
 tabISG3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ISGC3")
-tabISG3 <- tabISG3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISG")
+tabISG3 <- tabISG3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISG")
 tabISE3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ISEC3")
-tabISE3 <- tabISE3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISE")
+tabISE3 <- tabISE3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISE")
 tabISL3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ISLC3")
-tabISL3 <- tabISL3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISL")
+tabISL3 <- tabISL3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISL")
 tabITG3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ITGC3")
-tabITG3 <- tabITG3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ITG")
+tabITG3 <- tabITG3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ITG")
 tabICG3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ICGC3")
-tabICG3 <- tabICG3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ICG")
+tabICG3 <- tabICG3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ICG")
 
 VarsToUse <- tabISG3 %>% rbind(tabISE3) %>% rbind(tabISL3) %>% rbind(tabITG3) %>% rbind(tabICG3)
 #save(VarsToUse, file = "Data_analysis/Codebook.RData")
@@ -180,41 +179,31 @@ VarsToUse <- VarsToUse %>% filter(!is.na(Construct))
 rm("tabISG3", "tabISE3", "tabISL3", "tabITG3", "tabICG3")
 
 
-idS <- VarsToUse %>% filter(Dataset == "ISG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE", "IDPOP", "IDBOOK")) %>% select(VariableC3) %>%  pull()
-idT <- VarsToUse %>% filter(Dataset == "ITG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE")) %>% select(VariableC3) %>%  pull()
-idC <- VarsToUse %>% filter(Dataset == "ICG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE")) %>% select(VariableC3) %>%  pull()
+idS <- VarsToUse %>% filter(Dataset == "ISG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE", "IDPOP", "IDBOOK")) %>% dplyr::select(VariableC3) %>%  pull()
+idT <- VarsToUse %>% filter(Dataset == "ITG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE")) %>% dplyr::select(VariableC3) %>%  pull()
+idC <- VarsToUse %>% filter(Dataset == "ICG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE")) %>% dplyr::select(VariableC3) %>%  pull()
 
 ```
 
-```{r json, eval=FALSE}
-library(rjson)
-
-ISC1 <- ISGC1 
-ISGC1json <- toJSON(unname(split(ISGC1, 1:nrow(ISGC1))))
-names(ISGC1json)
-all.equal(ISC1, fromJSON(ISGC1json))
-
-ISGC2json <- toJSON(unname(split(ISGC2, 1:nrow(ISGC2))))
-cat(ISGC2json)
-all.equal(ISGC2, fromJSON(ISGC2json))
-```
-
-```{r mergedata}
+```{r mergedata, eval=FALSE}
+repet <- c("SAGE", "SGENDER", "TOTWGTS", "S_GENDER", "S_AGE")
+ 
 #Merging student questionnaires same cycle, General + European + Latin American
-varsC1 <- VarsToUse %>% filter(!is.na(VariableC1)) %>% select(VariableC1) %>% pull()
+varsC1 <- VarsToUse %>% filter(!is.na(VariableC1) & Dataset %in% c("ISG", "ISE", "ISL")) %>% dplyr::select(VariableC1) %>% pull()
+varsC2 <- VarsToUse %>% filter(!is.na(VariableC2) & Dataset %in% c("ISG", "ISE", "ISL")) %>% dplyr::select(VariableC2) %>% pull()
+varsC3 <- VarsToUse %>% filter(!is.na(VariableC3) & Dataset %in% c("ISG", "ISE", "ISL")) %>% dplyr::select(VariableC3) %>% pull()
+
 ISC1 <- ISGC1[, colnames(ISGC1) %in% varsC1]
 
-varsC2 <- VarsToUse %>% filter(!is.na(VariableC2)) %>% select(VariableC2) %>% pull()
 ISC2 <- ISGC2[, colnames(ISGC2) %in% c(varsC2, "cycle")] %>% 
-  full_join(ISEC2[, colnames(ISEC2) %in% c(varsC2, "cycle")], by = c("cycle", idS)) %>% 
-  full_join(ISLC2[, colnames(ISLC2) %in% c(varsC2, "cycle")], by = c("cycle", idS)) 
+  full_join(ISEC2[, colnames(ISEC2) %in% c(varsC2[!varsC2 %in% repet], "cycle")], by = c("cycle", idS)) %>% 
+  full_join(ISLC2[, colnames(ISLC2) %in% c(varsC2[!varsC2 %in% repet], "cycle")], by = c("cycle", idS)) 
 
-varsC3 <- VarsToUse %>% filter(!is.na(VariableC3)) %>% select(VariableC3) %>% pull()
 ISC3 <- ISGC3[, colnames(ISGC3) %in% c(varsC3, "cycle")] %>% 
-  full_join(ISEC3[, colnames(ISEC3) %in% c(varsC3, "cycle")], by = c("cycle", idS)) %>% 
-  full_join(ISLC3[, colnames(ISLC3) %in% c(varsC3, "cycle")], by = c("cycle", idS)) 
+  full_join(ISEC3[, colnames(ISEC3) %in% c(varsC3[!varsC3 %in% repet], "cycle")], by = c("cycle", idS)) %>% 
+  full_join(ISLC3[, colnames(ISLC3) %in% c(varsC3[!varsC3 %in% repet], "cycle")], by = c("cycle", idS)) 
 
-rm(list = c("ISGC1","ISGC2","ISEC2","ISLC2","ISGC3","ISEC3","ISLC3"))
+#rm(list = c("ISGC1","ISGC2","ISEC2","ISLC2","ISGC3","ISEC3","ISLC3"))
 
 #Rename function, variables without IS2-IS3
 rename_cycle <- function(dataset){
@@ -231,57 +220,73 @@ rename_cycle <- function(dataset){
   dataset_r <- dataset %>% rename_at(vars(colnames(dataset)), ~ names2)
 }
 
+#######Student files
+# ISC2_r <- rename_cycle(ISC2)
+# ISC3_r <- rename_cycle(ISC3)
+
+#Setting (row bind) cycles for Students Questionnaires
+ISC <- ISC1 %>%
+  bind_rows(ISC2) %>%
+  bind_rows(ISC3) #%>% 
+  #nest(ISG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
+#rm(list = c("ISC1","ISC2", "ISC3","ISC2_r", "ISC3_r"))
+
+
 #######Teacher file
 #Setting (row bind) cycles for Teacher Questionnaires
-ITGC2_r <- rename_cycle(ITGC2)
-ITGC3_r <- rename_cycle(ITGC3)
+# ITGC2_r <- rename_cycle(ITGC2)
+# ITGC3_r <- rename_cycle(ITGC3)
+
+varsC1 <- VarsToUse %>% filter(!is.na(VariableC1) & Dataset == "ITG") %>% dplyr::select(VariableC1) %>% pull()
+varsC2 <- VarsToUse %>% filter(!is.na(VariableC2) & Dataset == "ITG") %>% dplyr::select(VariableC2) %>% pull()
+varsC3 <- VarsToUse %>% filter(!is.na(VariableC3) & Dataset == "ITG") %>% dplyr::select(VariableC3) %>% pull()
 
 ITG <- ITGC1[, colnames(ITGC1) %in% c(varsC1, "cycle")] %>%
-  bind_rows(ITGC2_r[, colnames(ITGC2_r) %in% c(varsC2, "cycle")]) %>%
-  bind_rows(ITGC3_r[, colnames(ITGC3_r) %in% c(varsC3, "cycle")]) #%>% 
+  bind_rows(ITGC2[, colnames(ITGC2) %in% c(varsC2, "cycle")]) %>%
+  bind_rows(ITGC3[, colnames(ITGC3) %in% c(varsC3, "cycle")]) #%>% 
   #nest(ITG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-rm(list = c("ITGC1","ITGC2", "ITGC3","ITGC2_r", "ITGC3_r"))
+#rm(list = c("ITGC1","ITGC2", "ITGC3","ITGC2_r", "ITGC3_r"))
 
 ########School file
 #Merging cycles for School Questionnaires
-ICGC2_r <- rename_cycle(ICGC2)
-ICGC3_r <- rename_cycle(ICGC3)
+# ICGC2_r <- rename_cycle(ICGC2)
+# ICGC3_r <- rename_cycle(ICGC3)
+
+varsC1 <- VarsToUse %>% filter(!is.na(VariableC1) & Dataset == "ICG") %>% dplyr::select(VariableC1) %>% pull()
+varsC2 <- VarsToUse %>% filter(!is.na(VariableC2) & Dataset == "ICG") %>% dplyr::select(VariableC2) %>% pull()
+varsC3 <- VarsToUse %>% filter(!is.na(VariableC3) & Dataset == "ICG") %>% dplyr::select(VariableC3) %>% pull()
 
 ICG <- ICGC1[, colnames(ICGC1) %in% c(varsC1, "cycle")] %>%
-  bind_rows(ICGC2_r[, colnames(ICGC2_r) %in% c(varsC2, "cycle")]) %>%
-  bind_rows(ICGC3_r[, colnames(ICGC3_r) %in% c(varsC3, "cycle")]) #%>% 
+  bind_rows(ICGC2[, colnames(ICGC2) %in% c(varsC2, "cycle")]) %>%
+  bind_rows(ICGC3[, colnames(ICGC3) %in% c(varsC3, "cycle")]) #%>% 
   #nest(ICG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-rm(list = c("ICGC1","ICGC2", "ICGC3","ICGC2_r", "ICGC3_r"))
-
-#######Student files
-ISC2_r <- rename_cycle(ISC2)
-ISC3_r <- rename_cycle(ISC3)
-
-#Setting (row bind) cycles for Students Questionnaires
-ISC <- ISC1[, colnames(ISC1) %in% c(varsC1, "cycle")] %>%
-  bind_rows(ISC2_r[, colnames(ISC2_r) %in% c(varsC2, "cycle")]) %>%
-  bind_rows(ISC3_r[, colnames(ISC3_r) %in% c(varsC3, "cycle")]) #%>% 
-  #nest(ISG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-rm(list = c("ISC1","ISC2", "ISC3","ISC2_r", "ISC3_r"))
+#rm(list = c("ICGC1","ICGC2", "ICGC3","ICGC2_r", "ICGC3_r"))
 
 ICCS <- ISC %>% full_join(ITG, by = c("cycle", idC)) %>% full_join(ICG, by = c("cycle", idC))
+save(ICCS, file = "Data_analysis/ICCS.RData")
 
-
-rm(list = c("idT", "idC", "idS"))
+#rm(list = c("idT", "idC", "idS"))
 ```
 
-# Description of dataset  
+# Description of variables  
 
-```{r descriptive}
+```{r descriptive, fig.height= 4, results = 'asis'}
+load("Data_analysis/ICCS.RData")
+load("Data_analysis/Codebook.RData")
+
+constr <- c("Attitudes toward equal rights for immigrants",
+            "Attitudes toward gender equality",
+            "Attitudes toward equal rights for all ethnic/racial groups")
 
 sys.source("Data_analysis/Descriptive_Analysis.R", envir = knitr::knit_global())
-c
+
 ```
 
 # Confirmatory Factor Analysis (CFA)  
 
 ```{r cfa}
-library(lavaan)
+
+sys.source("Data_analysis/cfa.R", envir = knitr::knit_global())
 
 ```
 

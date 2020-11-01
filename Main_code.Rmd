@@ -274,8 +274,8 @@ rm(list = c("idT", "idC", "idS"))
 
 ```{r descriptive}
 
-#source("Descriptive Analysis.R")
-
+sys.source("Data_analysis/Descriptive_Analysis.R", envir = knitr::knit_global())
+c
 ```
 
 # Confirmatory Factor Analysis (CFA)  

@@ -21,6 +21,9 @@
 .Rproj.user/
 *.Rproj
 
+# Html file from Markdowm
+Main_code.html
+
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
@@ -40,5 +43,3 @@ vignettes/*.pdf
 *.xlsx
 *.xls
 
-# Html file from Markdowm
-*.html

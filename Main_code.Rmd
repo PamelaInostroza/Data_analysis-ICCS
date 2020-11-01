@@ -20,8 +20,8 @@ library(tidyverse)
 
 setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/")
 
-Countries <- read_xlsx("DataAnalysis/Metadata.xlsx", sheet = "CNT")
-Files <- read_xlsx("DataAnalysis/Metadata.xlsx", sheet = "Files")
+Countries <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "CNT")
+Files <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "Files")
 
 
 CNT = c("ITA","CHL") #,"BFL","PER"
@@ -163,19 +163,19 @@ rm(list = c("dataset","nc","filenames"))
 ```{r codebooks}
 
 #Joining Questionnaires for Students 
-tabISG3 <- read_xlsx("DataAnalysis/ICCS2016MS_Codebook.xlsx", sheet = "ISGC3")
+tabISG3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ISGC3")
 tabISG3 <- tabISG3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISG")
-tabISE3 <- read_xlsx("DataAnalysis/ICCS2016MS_Codebook.xlsx", sheet = "ISEC3")
+tabISE3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ISEC3")
 tabISE3 <- tabISE3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISE")
-tabISL3 <- read_xlsx("DataAnalysis/ICCS2016MS_Codebook.xlsx", sheet = "ISLC3")
+tabISL3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ISLC3")
 tabISL3 <- tabISL3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISL")
-tabITG3 <- read_xlsx("DataAnalysis/ICCS2016MS_Codebook.xlsx", sheet = "ITGC3")
+tabITG3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ITGC3")
 tabITG3 <- tabITG3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ITG")
-tabICG3 <- read_xlsx("DataAnalysis/ICCS2016MS_Codebook.xlsx", sheet = "ICGC3")
+tabICG3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ICGC3")
 tabICG3 <- tabICG3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ICG")
 
 VarsToUse <- tabISG3 %>% rbind(tabISE3) %>% rbind(tabISL3) %>% rbind(tabITG3) %>% rbind(tabICG3)
-#save(VarsToUse, file = "DataAnalysis/Codebook.RData")
+#save(VarsToUse, file = "Data_analysis/Codebook.RData")
 VarsToUse <- VarsToUse %>% filter(!is.na(Construct))
 rm("tabISG3", "tabISE3", "tabISL3", "tabITG3", "tabICG3")
 
@@ -273,9 +273,8 @@ rm(list = c("idT", "idC", "idS"))
 # Description of dataset  
 
 ```{r descriptive}
-# Colnames
-colnames(ICCS)
-#by(summary(ICCS),ICCS$cycle)
+
+source("Descriptive Analysis.R")
 
 ```
 

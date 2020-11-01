@@ -1,0 +1,295 @@
+---
+title: "ICCS datafiles 1999/2009/2016/2022"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+---
+
+# Read SPSS files to R and Joining them
+
+Select countries and years (cycle) to analyse 
+
+```{r setup, echo = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+knitr::opts_knit$set(root.dir = 'C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis')
+library(haven)
+library(readxl)
+library(tidyverse)
+
+
+setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/")
+
+Countries <- read_xlsx("DataAnalysis/Metadata.xlsx", sheet = "CNT")
+Files <- read_xlsx("DataAnalysis/Metadata.xlsx", sheet = "Files")
+
+
+CNT = c("ITA","CHL") #,"BFL","PER"
+
+years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% select(Country, AlphaCode, year) 
+
+```
+
+```{r namesfiles}
+filenames <- NULL
+print("Countries selected and Year participation in ICCS: ")
+
+for (cnt in CNT) {
+
+  yearf <- years %>% filter(AlphaCode == cnt) %>% arrange(as.numeric(year))
+  
+  print(paste0(unique(yearf$Country), " :", paste(sort(ifelse(yearf$year == "99", paste0("19",yearf$year), paste0("20",yearf$year))), collapse = " ")))
+
+  for (year in yearf$year) {
+ 
+    if (year == "99") Folder <- paste0("CivED19",year,"_IDB_SPSS_G8") else
+      Folder <- paste0("ICCS20",year,"_IDB_SPSS")
+    CountryEU <- Countries %>% filter(year == year & !is.na(EUQ)) %>% select(AlphaCode)
+    CountryLA <- Countries %>% filter(year == year & !is.na(LAQ)) %>% select(AlphaCode) 
+    File <- Files %>% filter(!is.na(ToUse)) %>% select(Filename)
+    if (year == "99") cycle = "f2" else if (year == "09") cycle = "C2" else if (year == "16") cycle = "C3" else 
+      if (year == "22") cycle = "C4"
+    if (year == "99") {
+      filenames <- c(filenames, paste0(Folder, "/Data/", "bs_", tolower(cnt), cycle,".sav"))
+      filenames <- c(filenames, paste0(Folder, "/Data/", "bt_", tolower(cnt), cycle,".sav"))
+      filenames <- c(filenames, paste0(Folder, "/Data/", "bc_", tolower(cnt), cycle,".sav"))
+    } else {
+      if (cnt %in% CountryLA$AlphaCode) filenames <- c(filenames, paste0(Folder, "/Data/", "ISL",cnt,cycle,".sav"))
+      if (cnt %in% CountryEU$AlphaCode) filenames <- c(filenames, paste0(Folder, "/Data/", "ISE",cnt,cycle,".sav")) 
+      filenames <- c(filenames, paste0(Folder, "/Data/", "ISG",cnt,cycle,".sav"))
+      filenames <- c(filenames, paste0(Folder, "/Data/", "ITG",cnt,cycle,".sav"))
+      filenames <- c(filenames, paste0(Folder, "/Data/", "ICG",cnt,cycle,".sav")) 
+    }
+  }
+}
+#order by questionnaire and cycle
+filenames <- filenames[order(substr(filenames,24,26),substr(filenames,30,31))] 
+rm(list = c("yearf", "cnt", "cycle", "Folder", "year", "File", "CountryEU", "CountryLA"))
+```
+
+```{r read_spss}
+ICGC1 <- NULL
+ICGC2 <- NULL
+ICGC3 <- NULL
+ITGC1 <- NULL
+ITGC2 <- NULL
+ITGC3 <- NULL
+ISGC1 <- NULL
+ISGC2 <- NULL
+ISGC3 <- NULL
+ISEC2 <- NULL
+ISEC3 <- NULL
+ISLC2 <- NULL
+ISLC3 <- NULL
+
+paste0("Files availables: ")
+
+for (nc in 1:length(filenames)) {
+  
+  if (substr(filenames[nc],24,26) == "ICG" | substr(filenames[nc],28,30) == "bc_") {
+    if (substr(filenames[nc],34,35) == "f2") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      ICGC1 <- rbind(ICGC1, dataset)
+    } else if (substr(filenames[nc],30,31) == "C2") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      ICGC2 <- rbind(ICGC2, dataset)
+    } else if (substr(filenames[nc],30,31) == "C3") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))  
+      ICGC3 <- rbind(ICGC3, dataset)
+    }
+  }
+  if (substr(filenames[nc],24,26) == "ITG" | substr(filenames[nc],28,30) == "bt_"){
+    if (substr(filenames[nc],34,35) == "f2") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      ITGC1 <- rbind(ITGC1, dataset)
+    } else if (substr(filenames[nc],30,31) == "C2") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      ITGC2 <- rbind(ITGC2, dataset)
+    } else if (substr(filenames[nc],30,31) == "C3") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))  
+      ITGC3 <- rbind(ITGC3, dataset)
+    }
+  }
+  if (substr(filenames[nc],24,26) == "ISG" | substr(filenames[nc],28,30) == "bs_"){
+   if (substr(filenames[nc],34,35) == "f2") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      dataset_r <- dataset %>% rename_at(vars(colnames(dataset)), ~ toupper(colnames(dataset)))
+      ISGC1 <- rbind(ISGC1, dataset_r)
+    } else if (substr(filenames[nc],30,31) == "C2") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      ISGC2 <- rbind(ISGC2, dataset)
+    } else if (substr(filenames[nc],30,31) == "C3") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))  
+      ISGC3 <- rbind(ISGC3, dataset)
+    }
+  }
+  
+  if (substr(filenames[nc],24,26) == "ISE") {
+    if (substr(filenames[nc],30,31) == "C2") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      ISEC2 <- rbind(ISEC2, dataset)
+    } else if (substr(filenames[nc],30,31) == "C3") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))  
+      ISEC3 <- rbind(ISEC3, dataset)
+    }
+  }
+  if (substr(filenames[nc],24,26) == "ISL") {
+    if (substr(filenames[nc],30,31) == "C2") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      ISLC2 <- rbind(ISLC2, dataset)
+    } else if (substr(filenames[nc],30,31) == "C3") {
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))  
+      ISLC3 <- rbind(ISLC3, dataset)
+    }
+  }
+  print(filenames[nc])
+}
+ISGC1$cycle <- "C1"
+ISGC2$cycle <- "C2"
+ISGC3$cycle <- "C3"
+ITGC1$cycle <- "C1"
+ITGC2$cycle <- "C2"
+ITGC3$cycle <- "C3"
+ICGC1$cycle <- "C1"
+ICGC2$cycle <- "C2"
+ICGC3$cycle <- "C3"
+ISEC2$cycle <- "C2"
+ISEC3$cycle <- "C3"
+ISLC2$cycle <- "C2"
+ISLC3$cycle <- "C3"
+rm(list = c("dataset","nc","filenames"))
+```
+
+```{r codebooks}
+
+#Joining Questionnaires for Students 
+tabISG3 <- read_xlsx("DataAnalysis/ICCS2016MS_Codebook.xlsx", sheet = "ISGC3")
+tabISG3 <- tabISG3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISG")
+tabISE3 <- read_xlsx("DataAnalysis/ICCS2016MS_Codebook.xlsx", sheet = "ISEC3")
+tabISE3 <- tabISE3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISE")
+tabISL3 <- read_xlsx("DataAnalysis/ICCS2016MS_Codebook.xlsx", sheet = "ISLC3")
+tabISL3 <- tabISL3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISL")
+tabITG3 <- read_xlsx("DataAnalysis/ICCS2016MS_Codebook.xlsx", sheet = "ITGC3")
+tabITG3 <- tabITG3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ITG")
+tabICG3 <- read_xlsx("DataAnalysis/ICCS2016MS_Codebook.xlsx", sheet = "ICGC3")
+tabICG3 <- tabICG3 %>% select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ICG")
+
+VarsToUse <- tabISG3 %>% rbind(tabISE3) %>% rbind(tabISL3) %>% rbind(tabITG3) %>% rbind(tabICG3)
+#save(VarsToUse, file = "DataAnalysis/Codebook.RData")
+VarsToUse <- VarsToUse %>% filter(!is.na(Construct))
+rm("tabISG3", "tabISE3", "tabISL3", "tabITG3", "tabICG3")
+
+
+idS <- VarsToUse %>% filter(Dataset == "ISG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE", "IDPOP", "IDBOOK")) %>% select(VariableC3) %>%  pull()
+idT <- VarsToUse %>% filter(Dataset == "ITG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE")) %>% select(VariableC3) %>%  pull()
+idC <- VarsToUse %>% filter(Dataset == "ICG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE")) %>% select(VariableC3) %>%  pull()
+
+```
+
+```{r json, eval=FALSE}
+library(rjson)
+
+ISC1 <- ISGC1 
+ISGC1json <- toJSON(unname(split(ISGC1, 1:nrow(ISGC1))))
+names(ISGC1json)
+all.equal(ISC1, fromJSON(ISGC1json))
+
+ISGC2json <- toJSON(unname(split(ISGC2, 1:nrow(ISGC2))))
+cat(ISGC2json)
+all.equal(ISGC2, fromJSON(ISGC2json))
+```
+
+```{r mergedata}
+#Merging student questionnaires same cycle, General + European + Latin American
+varsC1 <- VarsToUse %>% filter(!is.na(VariableC1)) %>% select(VariableC1) %>% pull()
+ISC1 <- ISGC1[, colnames(ISGC1) %in% varsC1]
+
+varsC2 <- VarsToUse %>% filter(!is.na(VariableC2)) %>% select(VariableC2) %>% pull()
+ISC2 <- ISGC2[, colnames(ISGC2) %in% c(varsC2, "cycle")] %>% 
+  full_join(ISEC2[, colnames(ISEC2) %in% c(varsC2, "cycle")], by = c("cycle", idS)) %>% 
+  full_join(ISLC2[, colnames(ISLC2) %in% c(varsC2, "cycle")], by = c("cycle", idS)) 
+
+varsC3 <- VarsToUse %>% filter(!is.na(VariableC3)) %>% select(VariableC3) %>% pull()
+ISC3 <- ISGC3[, colnames(ISGC3) %in% c(varsC3, "cycle")] %>% 
+  full_join(ISEC3[, colnames(ISEC3) %in% c(varsC3, "cycle")], by = c("cycle", idS)) %>% 
+  full_join(ISLC3[, colnames(ISLC3) %in% c(varsC3, "cycle")], by = c("cycle", idS)) 
+
+rm(list = c("ISGC1","ISGC2","ISEC2","ISLC2","ISGC3","ISEC3","ISLC3"))
+
+#Rename function, variables without IS2-IS3
+rename_cycle <- function(dataset){
+  names2 <- colnames(dataset)
+  
+  for (idv in 1:length(names2)) {
+    if (substr(names2[idv],1,3) %in% c("IS2","IS3","ES2","ES3","LS2","LS3","IT2","IT3","IC2","IC3")) {
+      names2[idv] <-  paste0(substr(names2[idv],1,2),substr(names2[idv],4,nchar(names2[idv])))
+    }
+    if (substr(names2[idv],1,2) %in% c()) {
+      names2[idv] <-  paste0(substr(names2[idv],1,2),substr(names2[idv],4,nchar(names2[idv])))
+    }
+  }
+  dataset_r <- dataset %>% rename_at(vars(colnames(dataset)), ~ names2)
+}
+
+#######Teacher file
+#Setting (row bind) cycles for Teacher Questionnaires
+ITGC2_r <- rename_cycle(ITGC2)
+ITGC3_r <- rename_cycle(ITGC3)
+
+ITG <- ITGC1[, colnames(ITGC1) %in% c(varsC1, "cycle")] %>%
+  bind_rows(ITGC2_r[, colnames(ITGC2_r) %in% c(varsC2, "cycle")]) %>%
+  bind_rows(ITGC3_r[, colnames(ITGC3_r) %in% c(varsC3, "cycle")]) #%>% 
+  #nest(ITG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
+rm(list = c("ITGC1","ITGC2", "ITGC3","ITGC2_r", "ITGC3_r"))
+
+########School file
+#Merging cycles for School Questionnaires
+ICGC2_r <- rename_cycle(ICGC2)
+ICGC3_r <- rename_cycle(ICGC3)
+
+ICG <- ICGC1[, colnames(ICGC1) %in% c(varsC1, "cycle")] %>%
+  bind_rows(ICGC2_r[, colnames(ICGC2_r) %in% c(varsC2, "cycle")]) %>%
+  bind_rows(ICGC3_r[, colnames(ICGC3_r) %in% c(varsC3, "cycle")]) #%>% 
+  #nest(ICG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
+rm(list = c("ICGC1","ICGC2", "ICGC3","ICGC2_r", "ICGC3_r"))
+
+#######Student files
+ISC2_r <- rename_cycle(ISC2)
+ISC3_r <- rename_cycle(ISC3)
+
+#Setting (row bind) cycles for Students Questionnaires
+ISC <- ISC1[, colnames(ISC1) %in% c(varsC1, "cycle")] %>%
+  bind_rows(ISC2_r[, colnames(ISC2_r) %in% c(varsC2, "cycle")]) %>%
+  bind_rows(ISC3_r[, colnames(ISC3_r) %in% c(varsC3, "cycle")]) #%>% 
+  #nest(ISG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
+rm(list = c("ISC1","ISC2", "ISC3","ISC2_r", "ISC3_r"))
+
+ICCS <- ISC %>% full_join(ITG, by = c("cycle", idC)) %>% full_join(ICG, by = c("cycle", idC))
+
+
+rm(list = c("idT", "idC", "idS"))
+```
+
+# Description of dataset  
+
+```{r descriptive}
+# Colnames
+colnames(ICCS)
+#by(summary(ICCS),ICCS$cycle)
+
+```
+
+# Confirmatory Factor Analysis (CFA)  
+
+```{r cfa}
+library(lavaan)
+
+```
+
+# Latent Class Analysis  (LCA)
+
+```{r}
+library(poLCA)
+#LCA1 <- poLCA(, data = ICCS, nclass = 2, graphs = TRUE, na.rm = TRUE)
+```
+

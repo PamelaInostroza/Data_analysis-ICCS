@@ -19,6 +19,7 @@
 
 # RStudio files
 .Rproj.user/
+*.Rproj
 
 # produced vignettes
 vignettes/*.html
@@ -38,3 +39,6 @@ vignettes/*.pdf
 # Excel files
 *.xlsx
 *.xls
+
+# Html file from Markdowm
+*.html

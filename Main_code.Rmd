@@ -274,7 +274,7 @@ rm(list = c("idT", "idC", "idS"))
 
 ```{r descriptive}
 
-source("Descriptive Analysis.R")
+#source("Descriptive Analysis.R")
 
 ```
 

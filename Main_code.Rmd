@@ -270,7 +270,7 @@ save(ICCS, file = "Data_analysis/ICCS.RData")
 
 # Description of variables  
 
-```{r descriptive, fig.height= 4, results = 'asis'}
+```{r descriptive, fig.height= 3, results = 'asis'}
 load("Data_analysis/ICCS.RData")
 load("Data_analysis/Codebook.RData")
 

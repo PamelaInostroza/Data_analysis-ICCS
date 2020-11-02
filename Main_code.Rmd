@@ -21,7 +21,11 @@ library(tidyverse)
 
 
 setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/")
+sys.source("Data_analysis/functions.R", envir = knitr::knit_global())
 
+```  
+
+```{r data}
 Countries <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "CNT")
 Files <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "Files")
 
@@ -205,20 +209,6 @@ ISC3 <- ISGC3[, colnames(ISGC3) %in% c(varsC3, "cycle")] %>%
 
 #rm(list = c("ISGC1","ISGC2","ISEC2","ISLC2","ISGC3","ISEC3","ISLC3"))
 
-#Rename function, variables without IS2-IS3
-rename_cycle <- function(dataset){
-  names2 <- colnames(dataset)
-  
-  for (idv in 1:length(names2)) {
-    if (substr(names2[idv],1,3) %in% c("IS2","IS3","ES2","ES3","LS2","LS3","IT2","IT3","IC2","IC3")) {
-      names2[idv] <-  paste0(substr(names2[idv],1,2),substr(names2[idv],4,nchar(names2[idv])))
-    }
-    if (substr(names2[idv],1,2) %in% c()) {
-      names2[idv] <-  paste0(substr(names2[idv],1,2),substr(names2[idv],4,nchar(names2[idv])))
-    }
-  }
-  dataset_r <- dataset %>% rename_at(vars(colnames(dataset)), ~ names2)
-}
 
 #######Student files
 # ISC2_r <- rename_cycle(ISC2)

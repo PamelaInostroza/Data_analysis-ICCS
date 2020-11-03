@@ -28,9 +28,10 @@ sys.source("Data_analysis/functions.R", envir = knitr::knit_global())
 ```{r data}
 Countries <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "CNT")
 Files <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "Files")
-
-
-CNT = c("ITA","CHL") #,"BFL","PER"
+Scales <- read_xlsx("Data_analysis/Items scales.xlsx", sheet = "Scales")
+CNT = c("ITA","CHL", "BFL", "PER")
+# c(AUS", "BFL", "BGR", "CHE", "CHL", "COL", "CYP", "CZE", "DEU", "DNK", "DOM", "ENG", "ESP", "EST", "FIN", "FRA", "GRC", "HKG", "HRV", "HUN", "ISR", "ITA", "KOR", "LTU", "LVA", "MEX", 
+# "MLT", "NLD", "NOR", "PER", "POL", "PRT", "ROM", "RUS", "SRB", "SVK", "SVN", "SWE", "TWN", "USA")
 
 years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% dplyr::select(Country, AlphaCode, year) 
 
@@ -207,7 +208,7 @@ ISC3 <- ISGC3[, colnames(ISGC3) %in% c(varsC3, "cycle")] %>%
   full_join(ISEC3[, colnames(ISEC3) %in% c(varsC3[!varsC3 %in% repet], "cycle")], by = c("cycle", idS)) %>% 
   full_join(ISLC3[, colnames(ISLC3) %in% c(varsC3[!varsC3 %in% repet], "cycle")], by = c("cycle", idS)) 
 
-#rm(list = c("ISGC1","ISGC2","ISEC2","ISLC2","ISGC3","ISEC3","ISLC3"))
+rm(list = c("ISGC1","ISGC2","ISEC2","ISLC2","ISGC3","ISEC3","ISLC3"))
 
 
 #######Student files
@@ -219,7 +220,7 @@ ISC <- ISC1 %>%
   bind_rows(ISC2) %>%
   bind_rows(ISC3) #%>% 
   #nest(ISG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-#rm(list = c("ISC1","ISC2", "ISC3","ISC2_r", "ISC3_r"))
+rm(list = c("ISC1","ISC2", "ISC3","ISC2_r", "ISC3_r"))
 
 
 #######Teacher file
@@ -235,7 +236,7 @@ ITG <- ITGC1[, colnames(ITGC1) %in% c(varsC1, "cycle")] %>%
   bind_rows(ITGC2[, colnames(ITGC2) %in% c(varsC2, "cycle")]) %>%
   bind_rows(ITGC3[, colnames(ITGC3) %in% c(varsC3, "cycle")]) #%>% 
   #nest(ITG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-#rm(list = c("ITGC1","ITGC2", "ITGC3","ITGC2_r", "ITGC3_r"))
+rm(list = c("ITGC1","ITGC2", "ITGC3","ITGC2_r", "ITGC3_r"))
 
 ########School file
 #Merging cycles for School Questionnaires
@@ -250,23 +251,19 @@ ICG <- ICGC1[, colnames(ICGC1) %in% c(varsC1, "cycle")] %>%
   bind_rows(ICGC2[, colnames(ICGC2) %in% c(varsC2, "cycle")]) %>%
   bind_rows(ICGC3[, colnames(ICGC3) %in% c(varsC3, "cycle")]) #%>% 
   #nest(ICG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-#rm(list = c("ICGC1","ICGC2", "ICGC3","ICGC2_r", "ICGC3_r"))
+rm(list = c("ICGC1","ICGC2", "ICGC3","ICGC2_r", "ICGC3_r"))
 
 ICCS <- ISC %>% full_join(ITG, by = c("cycle", idC)) %>% full_join(ICG, by = c("cycle", idC))
 save(ICCS, file = "Data_analysis/ICCS.RData")
 
-#rm(list = c("idT", "idC", "idS"))
+rm(list = c("idT", "idC", "idS"))
 ```
 
 # Description of variables  
 
-```{r descriptive, fig.height= 3, results = 'asis'}
+```{r descriptive, fig.height= 4, results = 'asis'}
 load("Data_analysis/ICCS.RData")
 load("Data_analysis/Codebook.RData")
-
-constr <- c("Attitudes toward equal rights for immigrants",
-            "Attitudes toward gender equality",
-            "Attitudes toward equal rights for all ethnic/racial groups")
 
 sys.source("Data_analysis/Descriptive_Analysis.R", envir = knitr::knit_global())
 

@@ -24,14 +24,25 @@ setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/")
 sys.source("Data_analysis/functions.R", envir = knitr::knit_global())
 
 ```  
+**Participant countries**  
+
+a. Nordic Countries: Denmark, Finland, Norway, Sweden.  
+b. Western European Countries: Belgium (Flemish), The Netherlands.  
+c. Central and Eastern European Countries: Bulgaria, Estonia, Latvia, Lithuania, Croatia, Slovenia.  
+d. Southern European Countries: Italy, Malta.  
+
 
 ```{r data}
 Countries <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "CNT")
 Files <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "Files")
 Scales <- read_xlsx("Data_analysis/Items scales.xlsx", sheet = "Scales")
-CNT = c("ITA","CHL", "BFL", "PER")
-# c(AUS", "BFL", "BGR", "CHE", "CHL", "COL", "CYP", "CZE", "DEU", "DNK", "DOM", "ENG", "ESP", "EST", "FIN", "FRA", "GRC", "HKG", "HRV", "HUN", "ISR", "ITA", "KOR", "LTU", "LVA", "MEX", 
-# "MLT", "NLD", "NOR", "PER", "POL", "PRT", "ROM", "RUS", "SRB", "SVK", "SVN", "SWE", "TWN", "USA")
+CNTa <- c("DNK", "FIN", "NOR", "SWE")
+CNTb <- c("BFL", "NLD")
+CNTc <- c("BGR", "EST", "LVA", "LTU", "HRV", "SVN")
+CNTd <- c("ITA", "MLT")
+CNTe <- c("CHL", "PER")
+CNT <- c(CNTa, CNTb, CNTc, CNTd, CNTe)
+# c(AUS", "BFL", "BGR", "CHE", "CHL", "COL", "CYP", "CZE", "DEU", "DNK", "DOM", "ENG", "ESP", "EST", "FIN", "FRA", "GRC", "HKG", "HRV", "HUN", "ISR", "ITA", "KOR", "LTU", "LVA", "MEX", "MLT", "NLD", "NOR", "PER", "POL", "PRT", "ROM", "RUS", "SRB", "SVK", "SVN", "SWE", "TWN", "USA")
 
 years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% dplyr::select(Country, AlphaCode, year) 
 
@@ -47,16 +58,19 @@ for (cnt in CNT) {
   
   print(paste0(unique(yearf$Country), " :", paste(sort(ifelse(yearf$year == "99", paste0("19",yearf$year), paste0("20",yearf$year))), collapse = " ")))
 
-  for (year in yearf$year) {
+  for (yearn in yearf$year) {
  
-    if (year == "99") Folder <- paste0("CivED19",year,"_IDB_SPSS_G8") else
-      Folder <- paste0("ICCS20",year,"_IDB_SPSS")
-    CountryEU <- Countries %>% filter(year == year & !is.na(EUQ)) %>% dplyr::select(AlphaCode)
-    CountryLA <- Countries %>% filter(year == year & !is.na(LAQ)) %>% dplyr::select(AlphaCode) 
+    CountryEU <- Countries %>% filter(year == yearn & !is.na(EUQ)) %>% dplyr::select(AlphaCode)
+    CountryLA <- Countries %>% filter(year == yearn & !is.na(LAQ)) %>% dplyr::select(AlphaCode) 
+    Teacher <- Countries %>% filter(year == yearn & !is.na(ITG)) %>% dplyr::select(AlphaCode) 
+    School <- Countries %>% filter(year == yearn & !is.na(ICG)) %>% dplyr::select(AlphaCode) 
+    
+    if (yearn == "99") Folder <- paste0("CivED19",yearn,"_IDB_SPSS_G8") else
+      Folder <- paste0("ICCS20",yearn,"_IDB_SPSS")
     File <- Files %>% filter(!is.na(ToUse)) %>% dplyr::select(Filename)
-    if (year == "99") cycle = "f2" else if (year == "09") cycle = "C2" else if (year == "16") cycle = "C3" else 
-      if (year == "22") cycle = "C4"
-    if (year == "99") {
+    if (yearn == "99") cycle = "f2" else if (yearn == "09") cycle = "C2" else if (yearn == "16") cycle = "C3" else 
+      if (yearn == "22") cycle = "C4"
+    if (yearn == "99") {
       filenames <- c(filenames, paste0(Folder, "/Data/", "bs_", tolower(cnt), cycle,".sav"))
       filenames <- c(filenames, paste0(Folder, "/Data/", "bt_", tolower(cnt), cycle,".sav"))
       filenames <- c(filenames, paste0(Folder, "/Data/", "bc_", tolower(cnt), cycle,".sav"))
@@ -64,14 +78,14 @@ for (cnt in CNT) {
       if (cnt %in% CountryLA$AlphaCode) filenames <- c(filenames, paste0(Folder, "/Data/", "ISL",cnt,cycle,".sav"))
       if (cnt %in% CountryEU$AlphaCode) filenames <- c(filenames, paste0(Folder, "/Data/", "ISE",cnt,cycle,".sav")) 
       filenames <- c(filenames, paste0(Folder, "/Data/", "ISG",cnt,cycle,".sav"))
-      filenames <- c(filenames, paste0(Folder, "/Data/", "ITG",cnt,cycle,".sav"))
-      filenames <- c(filenames, paste0(Folder, "/Data/", "ICG",cnt,cycle,".sav")) 
+      if (cnt %in% Teacher$AlphaCode) filenames <- c(filenames, paste0(Folder, "/Data/", "ITG",cnt,cycle,".sav"))
+      if (cnt %in% School$AlphaCode) filenames <- c(filenames, paste0(Folder, "/Data/", "ICG",cnt,cycle,".sav")) 
     }
   }
 }
 #order by questionnaire and cycle
 filenames <- filenames[order(substr(filenames,24,26),substr(filenames,30,31))] 
-rm(list = c("yearf", "cnt", "cycle", "Folder", "year", "File", "CountryEU", "CountryLA"))
+rm(list = c("yearf", "cnt", "cycle", "Folder", "yearn", "File", "CountryEU", "CountryLA"))
 ```
 
 ```{r read_spss, eval=FALSE}
@@ -90,35 +104,40 @@ ISLC2 <- NULL
 ISLC3 <- NULL
 
 for (nc in 1:length(filenames)) {
-  
+  print(paste("nc:",filenames[nc]))
   if (substr(filenames[nc],24,26) == "ICG" | substr(filenames[nc],28,30) == "bc_") {
     if (substr(filenames[nc],34,35) == "f2") {
       dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
-      ICGC1 <- rbind(ICGC1, dataset)
+      dataset_r <- dataset %>% rename_at(vars(colnames(dataset)), ~ toupper(colnames(dataset)))
+      ICGC1 <- rbind(ICGC1, dataset_r)
     } else if (substr(filenames[nc],30,31) == "C2") {
       dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
       ICGC2 <- rbind(ICGC2, dataset)
     } else if (substr(filenames[nc],30,31) == "C3") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))  
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
       ICGC3 <- rbind(ICGC3, dataset)
     }
   }
   if (substr(filenames[nc],24,26) == "ITG" | substr(filenames[nc],28,30) == "bt_"){
     if (substr(filenames[nc],34,35) == "f2") {
       dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
-      ITGC1 <- rbind(ITGC1, dataset)
+      dataset_r <- dataset %>% rename_at(vars(colnames(dataset)), ~ toupper(colnames(dataset)))
+      ITGC1 <- rbind(ITGC1, dataset_r)
     } else if (substr(filenames[nc],30,31) == "C2") {
       dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
       ITGC2 <- rbind(ITGC2, dataset)
     } else if (substr(filenames[nc],30,31) == "C3") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))  
+      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
       ITGC3 <- rbind(ITGC3, dataset)
     }
   }
+  
   if (substr(filenames[nc],24,26) == "ISG" | substr(filenames[nc],28,30) == "bs_"){
    if (substr(filenames[nc],34,35) == "f2") {
       dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
       dataset_r <- dataset %>% rename_at(vars(colnames(dataset)), ~ toupper(colnames(dataset)))
+      dataset_r$IMMIGMLE <- labelled(dataset_r$IMMIGMLE, labels =  c(INVALID = 97, OMITTED = 99), label = attr(dataset_r$IMMIGMLE, "label"))
+      dataset_r$WOMRTMLE <- labelled(dataset_r$WOMRTMLE, labels =  c(INVALID = 97, OMITTED = 99), label = attr(dataset_r$WOMRTMLE, "label"))
       ISGC1 <- rbind(ISGC1, dataset_r)
     } else if (substr(filenames[nc],30,31) == "C2") {
       dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
@@ -161,7 +180,7 @@ ISEC2$cycle <- "C2"
 ISEC3$cycle <- "C3"
 ISLC2$cycle <- "C2"
 ISLC3$cycle <- "C3"
-rm(list = c("dataset","nc","filenames"))
+#rm(list = c("dataset","nc","filenames"))
 ```
 
 ```{r codebooks, eval=FALSE}
@@ -220,7 +239,8 @@ ISC <- ISC1 %>%
   bind_rows(ISC2) %>%
   bind_rows(ISC3) #%>% 
   #nest(ISG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-rm(list = c("ISC1","ISC2", "ISC3","ISC2_r", "ISC3_r"))
+rm(list = c("ISC1","ISC2", "ISC3"))
+#rm(list = c("ISC2_r", "ISC3_r"))
 
 
 #######Teacher file
@@ -236,7 +256,8 @@ ITG <- ITGC1[, colnames(ITGC1) %in% c(varsC1, "cycle")] %>%
   bind_rows(ITGC2[, colnames(ITGC2) %in% c(varsC2, "cycle")]) %>%
   bind_rows(ITGC3[, colnames(ITGC3) %in% c(varsC3, "cycle")]) #%>% 
   #nest(ITG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-rm(list = c("ITGC1","ITGC2", "ITGC3","ITGC2_r", "ITGC3_r"))
+rm(list = c("ITGC1","ITGC2", "ITGC3"))
+#rm(list = c("ITGC2_r", "ITGC3_r"))
 
 ########School file
 #Merging cycles for School Questionnaires
@@ -251,7 +272,8 @@ ICG <- ICGC1[, colnames(ICGC1) %in% c(varsC1, "cycle")] %>%
   bind_rows(ICGC2[, colnames(ICGC2) %in% c(varsC2, "cycle")]) %>%
   bind_rows(ICGC3[, colnames(ICGC3) %in% c(varsC3, "cycle")]) #%>% 
   #nest(ICG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-rm(list = c("ICGC1","ICGC2", "ICGC3","ICGC2_r", "ICGC3_r"))
+rm(list = c("ICGC1","ICGC2", "ICGC3"))
+#rm(list = c("ICGC2_r", "ICGC3_r"))
 
 ICCS <- ISC %>% full_join(ITG, by = c("cycle", idC)) %>% full_join(ICG, by = c("cycle", idC))
 save(ICCS, file = "Data_analysis/ICCS.RData")
@@ -261,17 +283,19 @@ rm(list = c("idT", "idC", "idS"))
 
 # Description of variables  
 
-```{r descriptive, fig.height= 4, results = 'asis'}
-load("Data_analysis/ICCS.RData")
+```{r descriptive, fig.height = 6, fig.width = 6, results = 'asis'}
+load("Data_analysis/ICCSAll.RData")
 load("Data_analysis/Codebook.RData")
 
 sys.source("Data_analysis/Descriptive_Analysis.R", envir = knitr::knit_global())
 
 ```
 
+/*<img src="Main_code_files/figure-html/sub_chunk_cycle1item1Const1-1.png" width="864" />*/
+
 # Confirmatory Factor Analysis (CFA)  
 
-```{r cfa}
+```{r cfa, eval =FALSE}
 
 sys.source("Data_analysis/cfa.R", envir = knitr::knit_global())
 

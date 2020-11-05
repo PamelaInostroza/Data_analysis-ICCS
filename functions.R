@@ -12,3 +12,20 @@ rename_cycle <- function(dataset){
   }
   dataset_r <- dataset %>% rename_at(vars(colnames(dataset)), ~ names2)
 }
+
+
+subchunkify <- function(g, name, fig_height = 7, fig_width = 5) {
+  g_deparsed <- paste0(deparse(
+                        function() {g}
+                      ), collapse = '')
+  
+  sub_chunk <- paste0("
+    `","``{r sub_chunk_", name, ", fig.height = ", fig_height, ", fig.width = ", fig_width, ", echo = FALSE}",
+                        "\n(", 
+                        g_deparsed
+                        , ")()",
+                        "\n`","``
+    ")
+  
+  cat(knitr::knit(text = knitr::knit_expand(text = sub_chunk), quiet = TRUE))
+}

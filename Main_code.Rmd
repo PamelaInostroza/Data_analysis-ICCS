@@ -288,10 +288,10 @@ load("Data_analysis/ICCSAll.RData")
 load("Data_analysis/Codebook.RData")
 
 sys.source("Data_analysis/Descriptive_Analysis.R", envir = knitr::knit_global())
-
+#/*<img src="Main_code_files/figure-html/sub_chunk_cycle1item1Const1-1.png" width="864" />*/
 ```
 
-/*<img src="Main_code_files/figure-html/sub_chunk_cycle1item1Const1-1.png" width="864" />*/
+
 
 # Confirmatory Factor Analysis (CFA)  
 

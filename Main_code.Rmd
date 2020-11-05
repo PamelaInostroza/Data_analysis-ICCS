@@ -18,6 +18,7 @@ knitr::opts_knit$set(root.dir = 'C:/Users/pamel/OneDrive - KU Leuven/Master in S
 library(haven)
 library(readxl)
 library(tidyverse)
+options(scipen = 999)
 
 
 setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/")
@@ -30,7 +31,7 @@ a. Nordic Countries: Denmark, Finland, Norway, Sweden.
 b. Western European Countries: Belgium (Flemish), The Netherlands.  
 c. Central and Eastern European Countries: Bulgaria, Estonia, Latvia, Lithuania, Croatia, Slovenia.  
 d. Southern European Countries: Italy, Malta.  
-
+e. Latin American Countries: Chile, Peru.  
 
 ```{r data}
 Countries <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "CNT")
@@ -41,7 +42,7 @@ CNTb <- c("BFL", "NLD")
 CNTc <- c("BGR", "EST", "LVA", "LTU", "HRV", "SVN")
 CNTd <- c("ITA", "MLT")
 CNTe <- c("CHL", "PER")
-CNT <- c(CNTa, CNTb, CNTc, CNTd, CNTe)
+CNT <- CNTb #c(CNTa, CNTb, CNTc, CNTd, CNTe)
 # c(AUS", "BFL", "BGR", "CHE", "CHL", "COL", "CYP", "CZE", "DEU", "DNK", "DOM", "ENG", "ESP", "EST", "FIN", "FRA", "GRC", "HKG", "HRV", "HUN", "ISR", "ITA", "KOR", "LTU", "LVA", "MEX", "MLT", "NLD", "NOR", "PER", "POL", "PRT", "ROM", "RUS", "SRB", "SVK", "SVN", "SWE", "TWN", "USA")
 
 years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% dplyr::select(Country, AlphaCode, year) 
@@ -217,31 +218,39 @@ varsC1 <- VarsToUse %>% filter(!is.na(VariableC1) & Dataset %in% c("ISG", "ISE",
 varsC2 <- VarsToUse %>% filter(!is.na(VariableC2) & Dataset %in% c("ISG", "ISE", "ISL")) %>% dplyr::select(VariableC2) %>% pull()
 varsC3 <- VarsToUse %>% filter(!is.na(VariableC3) & Dataset %in% c("ISG", "ISE", "ISL")) %>% dplyr::select(VariableC3) %>% pull()
 
-ISC1 <- ISGC1[, colnames(ISGC1) %in% varsC1]
+if (is.data.frame(ISGC1)) ISC1 <- ISGC1[, colnames(ISGC1) %in% varsC1]
 
-ISC2 <- ISGC2[, colnames(ISGC2) %in% c(varsC2, "cycle")] %>% 
-  full_join(ISEC2[, colnames(ISEC2) %in% c(varsC2[!varsC2 %in% repet], "cycle")], by = c("cycle", idS)) %>% 
-  full_join(ISLC2[, colnames(ISLC2) %in% c(varsC2[!varsC2 %in% repet], "cycle")], by = c("cycle", idS)) 
+if (is.data.frame(ISGC2) & is.data.frame(ISEC2)) {
+  ISC2 <- ISGC2[, colnames(ISGC2) %in% c(varsC2, "cycle")] %>% 
+    full_join(ISEC2[, colnames(ISEC2) %in% c(varsC2[!varsC2 %in% repet], "cycle")], by = c("cycle", idS)) 
+}  
+if (is.data.frame(ISC2) & is.data.frame(ISLC2))  {
+  ISC2 <- ISC2 %>% 
+    full_join(ISLC2[, colnames(ISLC2) %in% c(varsC2[!varsC2 %in% repet], "cycle")], by = c("cycle", idS)) 
+}
 
-ISC3 <- ISGC3[, colnames(ISGC3) %in% c(varsC3, "cycle")] %>% 
-  full_join(ISEC3[, colnames(ISEC3) %in% c(varsC3[!varsC3 %in% repet], "cycle")], by = c("cycle", idS)) %>% 
-  full_join(ISLC3[, colnames(ISLC3) %in% c(varsC3[!varsC3 %in% repet], "cycle")], by = c("cycle", idS)) 
-
-rm(list = c("ISGC1","ISGC2","ISEC2","ISLC2","ISGC3","ISEC3","ISLC3"))
-
+if (is.data.frame(ISGC3) & is.data.frame(ISEC3)) {
+  ISC3 <- ISGC3[, colnames(ISGC3) %in% c(varsC3, "cycle")] %>% 
+    full_join(ISEC3[, colnames(ISEC3) %in% c(varsC3[!varsC3 %in% repet], "cycle")], by = c("cycle", idS)) 
+}  
+if (is.data.frame(ISC3) & is.data.frame(ISLC3))  {
+  ISC3 <- ISC3 %>% 
+    full_join(ISLC3[, colnames(ISLC3) %in% c(varsC3[!varsC3 %in% repet], "cycle")], by = c("cycle", idS)) 
+}
 
 #######Student files
 # ISC2_r <- rename_cycle(ISC2)
 # ISC3_r <- rename_cycle(ISC3)
 
 #Setting (row bind) cycles for Students Questionnaires
+
+if (!exists("ISC1")) ISC1 <- NULL
+if (!exists("ISC2")) ISC2 <- NULL
+if (!exists("ISC3")) ISC3 <- NULL
+  
 ISC <- ISC1 %>%
   bind_rows(ISC2) %>%
-  bind_rows(ISC3) #%>% 
-  #nest(ISG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-rm(list = c("ISC1","ISC2", "ISC3"))
-#rm(list = c("ISC2_r", "ISC3_r"))
-
+  bind_rows(ISC3) 
 
 #######Teacher file
 #Setting (row bind) cycles for Teacher Questionnaires
@@ -252,12 +261,13 @@ varsC1 <- VarsToUse %>% filter(!is.na(VariableC1) & Dataset == "ITG") %>% dplyr:
 varsC2 <- VarsToUse %>% filter(!is.na(VariableC2) & Dataset == "ITG") %>% dplyr::select(VariableC2) %>% pull()
 varsC3 <- VarsToUse %>% filter(!is.na(VariableC3) & Dataset == "ITG") %>% dplyr::select(VariableC3) %>% pull()
 
-ITG <- ITGC1[, colnames(ITGC1) %in% c(varsC1, "cycle")] %>%
-  bind_rows(ITGC2[, colnames(ITGC2) %in% c(varsC2, "cycle")]) %>%
-  bind_rows(ITGC3[, colnames(ITGC3) %in% c(varsC3, "cycle")]) #%>% 
-  #nest(ITG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-rm(list = c("ITGC1","ITGC2", "ITGC3"))
-#rm(list = c("ITGC2_r", "ITGC3_r"))
+if (!is.data.frame(ITGC1)) ITGC1 <- NULL else ITGC1 <- ITGC1[, colnames(ITGC1) %in% c(varsC1, "cycle")]
+if (!is.data.frame(ITGC2)) ITGC2 <- NULL else ITGC2 <- ITGC2[, colnames(ITGC2) %in% c(varsC2, "cycle")]
+if (!is.data.frame(ITGC3)) ITGC3 <- NULL else ITGC3 <- ITGC3[, colnames(ITGC3) %in% c(varsC3, "cycle")]
+ 
+ITG <- ITGC1 %>%
+  bind_rows(ITGC2) %>%
+  bind_rows(ITGC3) 
 
 ########School file
 #Merging cycles for School Questionnaires
@@ -268,26 +278,40 @@ varsC1 <- VarsToUse %>% filter(!is.na(VariableC1) & Dataset == "ICG") %>% dplyr:
 varsC2 <- VarsToUse %>% filter(!is.na(VariableC2) & Dataset == "ICG") %>% dplyr::select(VariableC2) %>% pull()
 varsC3 <- VarsToUse %>% filter(!is.na(VariableC3) & Dataset == "ICG") %>% dplyr::select(VariableC3) %>% pull()
 
-ICG <- ICGC1[, colnames(ICGC1) %in% c(varsC1, "cycle")] %>%
-  bind_rows(ICGC2[, colnames(ICGC2) %in% c(varsC2, "cycle")]) %>%
-  bind_rows(ICGC3[, colnames(ICGC3) %in% c(varsC3, "cycle")]) #%>% 
-  #nest(ICG = -c(cycle, COUNTRY, IDCNTRY, IDPOP))
-rm(list = c("ICGC1","ICGC2", "ICGC3"))
-#rm(list = c("ICGC2_r", "ICGC3_r"))
+if (!is.data.frame(ICGC1)) ICGC1 <- NULL else ICGC1 <- ICGC1[, colnames(ICGC1) %in% c(varsC1, "cycle")]
+if (!is.data.frame(ICGC2)) ICGC2 <- NULL else ICGC2 <- ICGC2[, colnames(ICGC2) %in% c(varsC2, "cycle")]
+if (!is.data.frame(ICGC3)) ICGC3 <- NULL else ICGC3 <- ICGC3[, colnames(ICGC3) %in% c(varsC3, "cycle")]
+ 
+ICG <- ICGC1 %>%
+  bind_rows(ICGC2) %>%
+  bind_rows(ICGC3) 
 
 ICCS <- ISC %>% full_join(ITG, by = c("cycle", idC)) %>% full_join(ICG, by = c("cycle", idC))
-save(ICCS, file = "Data_analysis/ICCS.RData")
+#save(ICCS, file = "Data_analysis/ICCS.RData")
 
-rm(list = c("idT", "idC", "idS"))
+# rm(list = c("ISGC1","ISGC2","ISEC2","ISLC2","ISGC3","ISEC3","ISLC3"))
+# rm(list = c("ISC1","ISC2", "ISC3"))
+# rm(list = c("ITGC1","ITGC2", "ITGC3"))
+# rm(list = c("ICGC1","ICGC2", "ICGC3"))
+# rm(list = c("repet","idT", "idC", "idS"))
+
+#rm(list = c("ISC2_r", "ISC3_r"))
+#rm(list = c("ITGC2_r", "ITGC3_r"))
+#rm(list = c("ICGC2_r", "ICGC3_r"))
+
+```
+
+```{r Saveddata}
+#load("Data_analysis/ICCSAll.RData")
+load("Data_analysis/ICCS.RData")
+load("Data_analysis/Codebook.RData")
 ```
 
 # Description of variables  
 
-```{r descriptive, fig.height = 6, fig.width = 6, results = 'asis'}
-load("Data_analysis/ICCSAll.RData")
-load("Data_analysis/Codebook.RData")
-
-sys.source("Data_analysis/Descriptive_Analysis.R", envir = knitr::knit_global())
+```{r descriptive, fig.height = 8, fig.width = 7, results = 'asis', fig.show='asis'}
+source("Data_analysis/Descriptive_Analysis.R")
+#plot()
 #/*<img src="Main_code_files/figure-html/sub_chunk_cycle1item1Const1-1.png" width="864" />*/
 ```
 
@@ -295,9 +319,9 @@ sys.source("Data_analysis/Descriptive_Analysis.R", envir = knitr::knit_global())
 
 # Confirmatory Factor Analysis (CFA)  
 
-```{r cfa, eval =FALSE}
+```{r cfa, out.width = '80%', results = 'asis'}
 
-sys.source("Data_analysis/cfa.R", envir = knitr::knit_global())
+source("Data_analysis/cfa.R")
 
 ```
 

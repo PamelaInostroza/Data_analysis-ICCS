@@ -25,7 +25,7 @@ if (any(grepl("99", years$year))){
   for (c99 in cnt99) {
     CNTcfa <- lavaan(model09, data = ds99[ds99$COUNTRY == c99,], auto.fix.first = TRUE, auto.var = TRUE, int.ov.free = TRUE, auto.cov.lv.x = TRUE, 
                      estimator = "MLM", meanstructure = TRUE)
-    survey.CNTfit <- lavaan.survey(lavaan.fit = CNTcfa, survey.design = survey.design09)
+    survey.CNTfit <- lavaan.survey(lavaan.fit = CNTcfa, survey.design = survey.design99)
     meas <- fitMeasures(survey.CNTfit, c("chisq","df", "cfi", "tli","rmsea", "srmr"), output = "matrix")
     meast99 <- cbind(meast99, meas)
   }
@@ -234,7 +234,7 @@ if (any(grepl("16", years$year))){
   for (c16 in cnt16) {
     CNTcfa <- lavaan(model16, data = ds16[ds16$COUNTRY == c16,], auto.fix.first = TRUE, auto.var = TRUE, int.ov.free = TRUE, auto.cov.lv.x = TRUE, 
                      estimator = "MLM", meanstructure = TRUE)
-    survey.CNTfit <- lavaan.survey(lavaan.fit = CNTcfa, survey.design = survey.design09)
+    survey.CNTfit <- lavaan.survey(lavaan.fit = CNTcfa, survey.design = survey.design16)
     meas <- fitMeasures(survey.CNTfit, c("chisq","df", "cfi", "tli","rmsea", "srmr"), output = "matrix")
     meast16 <- cbind(meast16, meas)
   }

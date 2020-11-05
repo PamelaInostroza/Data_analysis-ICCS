@@ -311,15 +311,13 @@ load("Data_analysis/Codebook.RData")
 
 ```{r descriptive, fig.height = 8, fig.width = 7, results = 'asis', fig.show='asis'}
 source("Data_analysis/Descriptive_Analysis.R")
-#plot()
-#/*<img src="Main_code_files/figure-html/sub_chunk_cycle1item1Const1-1.png" width="864" />*/
 ```
 
 
 
 # Confirmatory Factor Analysis (CFA)  
 
-```{r cfa, out.width = '80%', results = 'asis'}
+```{r cfa, out.width = '100%', out.height='100%', results = 'asis'}
 
 source("Data_analysis/cfa.R")
 

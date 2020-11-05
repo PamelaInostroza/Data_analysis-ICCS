@@ -1,8 +1,6 @@
 
 setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/Data_analysis")
 
-
-#plot <- function(){
   index <- Scales %>% filter(item == "index")
   index1 <- index %>% dplyr::select(item, CIVED_1999, ICCS_2009, ICCS_2016) %>% 
     pivot_longer(-item) %>% 
@@ -52,8 +50,8 @@ setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/Da
     							geom_text(data = transform(data, GENDER = "Total"), aes(label = scales::percent(..prop.., accuracy = 0.1), y= ..prop.. ), stat= "count", vjust = -.5, size = 3) +
     							scale_y_continuous(labels = scales::percent_format(), limits = c(0,1)) +
     			        theme(axis.text.y=element_blank(), axis.ticks.y=element_blank()) 
-    			#print(g1)
-    			subchunkify(g1, paste0("cycle",i,"item",l, "Const", j), 1.5*length(unique(data$COUNTRY)), 3*(length(unique(data$GENDER))+1))
+    			print(g1)
+    			#subchunkify(g1, paste0("cycle",i,"item",l, "Const", j), 1.5*length(unique(data$COUNTRY)), 3*(length(unique(data$GENDER))+1))
     			} else if (hl[i, "name"] == "ICCS_2009"){
     			  cat("  \n")
     			  cat("  \n")
@@ -75,8 +73,8 @@ setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/Da
     							geom_text(data = transform(data, SGENDER = "Total"), aes(label = scales::percent(..prop.., accuracy = 0.1), y= ..prop.. ), stat= "count", vjust = -.5, size = 3) +
     							scale_y_continuous(labels = scales::percent_format(), limits = c(0,1)) +
     			        theme(axis.text.y=element_blank(),axis.ticks.y=element_blank())
-    			#print(g2)
-    			subchunkify(g2,paste0("cycle",i,"item",l, "Const", j), 1.5*length(unique(data$COUNTRY)), 3*(length(unique(data$SGENDER))+1))
+    			print(g2)
+    			#subchunkify(g2,paste0("cycle",i,"item",l, "Const", j), 1.5*length(unique(data$COUNTRY)), 3*(length(unique(data$SGENDER))+1))
     			} else if (hl[i, "name"] == "ICCS_2016"){
     			  cat("  \n")
     			  cat("  \n")
@@ -98,8 +96,8 @@ setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/Da
     							geom_text(data = transform(data, S_GENDER = "Total"), aes(label = scales::percent(..prop.., accuracy = 0.1), y= ..prop.. ), stat= "count", vjust = -.5, size = 3) +
     							scale_y_continuous(labels = scales::percent_format(), limits = c(0,1)) +
     			        theme(axis.text.y=element_blank(),axis.ticks.y=element_blank())
-    			#print(g3)
-    			subchunkify(g3, paste0("cycle",i,"item",l, "Const", j), 1.5*length(unique(data$COUNTRY)), 3*(length(unique(data$S_GENDER))+1))
+    			print(g3)
+    			#subchunkify(g3, paste0("cycle",i,"item",l, "Const", j), 1.5*length(unique(data$COUNTRY)), 3*(length(unique(data$S_GENDER))+1))
     			}  
     		}
       } 
@@ -129,8 +127,8 @@ setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/Da
           xlab(paste0(ind_name,"- CIVED1999")) +
           scale_color_brewer(palette="Accent") +
           theme(legend.position = "none") 
-        #print(g4)
-        subchunkify(g4, paste0("Icycle",i,"item",l, "Const", j), 4, 6)
+        print(g4)
+        #subchunkify(g4, paste0("Icycle",i,"item",l, "Const", j), 4, 6)
       } else if (hai[h, "name"] == "ICCS_2009"){
         data <- ICCS %>% dplyr::select(COUNTRY, TOTWGTS, all_of(ind_name), SGENDER) %>%
           mutate_at(c("SGENDER"), as_factor) %>%
@@ -148,8 +146,8 @@ setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/Da
           xlab(paste0(ind_name,"- ICCS_2009")) +
           scale_color_brewer(palette="Accent") +
           theme(legend.position = "none")
-        #print(g5)
-        subchunkify(g5, paste0("Icycle",i,"item",l, "Const", j), 4, 6)
+        print(g5)
+        #subchunkify(g5, paste0("Icycle",i,"item",l, "Const", j), 4, 6)
       } else if (hai[h, "name"] == "ICCS_2016"){
         data <- ICCS %>% dplyr::select(COUNTRY, TOTWGTS, all_of(ind_name), S_GENDER) %>%
           mutate_at(c("S_GENDER"), as_factor) %>%
@@ -167,9 +165,8 @@ setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/Da
           xlab(paste0(ind_name,"- ICCS_2016")) +
           scale_color_brewer(palette="Accent") +
           theme(legend.position = "none")
-        #print(g6)
-        subchunkify(g6, paste0("Icycle",i,"item",l, "Const", j), 4, 6)
+        print(g6)
+        #subchunkify(g6, paste0("Icycle",i,"item",l, "Const", j), 4, 6)
       } 
     }
   }
-#}

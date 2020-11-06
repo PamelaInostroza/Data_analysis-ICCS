@@ -12,9 +12,9 @@ if (any(grepl("99", years$year))){
   cat('## CIVED 1999  \n')
   #############1999#########
   index99 <- Scales %>% filter(item != "index") %>% dplyr::select(CIVED_1999) %>% na.omit() %>% pull()
-  ds99 <- ICCS %>% filter(!COUNTRY %in% c("CHL", "PER")) %>% dplyr::select(all_of(index99), IDSTUD, TOTWGT, COUNTRY, GENDER) %>% 
-    mutate(GENDER = as.character(GENDER)) %>% na.omit()  
-  survey.design99 <- svydesign(ids=~IDSTUD, prob=~TOTWGT, data=ds99)
+  ds99 <- ISC %>% filter(!COUNTRY %in% c("CHL", "PER") & !is.na(TOTWGT_Gc1)) %>% dplyr::select(all_of(index99), IDSTUD, TOTWGT_Gc1, COUNTRY, GENDER) %>% 
+    mutate(GENDER = as.character(GENDER))
+  survey.design99 <- svydesign(ids=~IDSTUD, prob=~TOTWGT_Gc1, data=ds99)
   
   cfa99 <- lavaan(model99, data = ds99, auto.fix.first = TRUE, auto.var = TRUE, int.ov.free = TRUE, auto.cov.lv.x = TRUE, 
                   estimator = "MLM", cluster = "COUNTRY", meanstructure = TRUE)
@@ -22,12 +22,20 @@ if (any(grepl("99", years$year))){
   
   cnt99 <- unique(ds99$COUNTRY)
   meast99 <- NULL
+  stdl99 <- NULL
   for (c99 in cnt99) {
-    CNTcfa <- lavaan(model09, data = ds99[ds99$COUNTRY == c99,], auto.fix.first = TRUE, auto.var = TRUE, int.ov.free = TRUE, auto.cov.lv.x = TRUE, 
+    survey.cnt99 <- svydesign(ids=~IDSTUD, prob=~TOTWGT_Gc1, data=ds99[ds99$COUNTRY == c99,])
+    
+    CNTcfa <- lavaan(model99, data = ds99[ds99$COUNTRY == c99,], auto.fix.first = TRUE, auto.var = TRUE, int.ov.free = TRUE, auto.cov.lv.x = TRUE, 
                      estimator = "MLM", meanstructure = TRUE)
-    survey.CNTfit <- lavaan.survey(lavaan.fit = CNTcfa, survey.design = survey.design99)
+    survey.CNTfit <- lavaan.survey(lavaan.fit = CNTcfa, survey.design = survey.cnt99)
     meas <- fitMeasures(survey.CNTfit, c("chisq","df", "cfi", "tli","rmsea", "srmr"), output = "matrix")
+    meas <- rbind(n = nobs(survey.CNTfit), meas)
     meast99 <- cbind(meast99, meas)
+    stdl <- standardizedSolution(survey.CNTfit) %>% 
+      filter(op == "=~") %>% 
+      mutate(cntry = c99)
+    stdl99 <- rbind(stdl99, stdl)
   }
   meast99 <- as.data.frame(t(meast99))
   rownames(meast99) <- cnt99
@@ -37,18 +45,34 @@ if (any(grepl("99", years$year))){
   cat('  \n')
   meas99 <- fitMeasures(survey.fit99, c("chisq","df","cfi", "tli","rmsea", "srmr"), 
                         output = "matrix")
-  knitr::kable(round(as.data.frame(t(meas99)), 3)) %>% print() 
+  knitr::kable(cbind(n = nobs(survey.fit99), round(as.data.frame(t(meas99)), 3))) %>% print() 
   
   cat('  \n')
   cat('### CFA - ICCS 1999, by countries')
   cat('  \n')
-  knitr::kable(round(meast99, 3)) %>% print() 
+  knitr::kable(meast99,digits = 3) %>% print() 
   cat('  \n')
   cat('  \n')
   #print(modindices(survey.fit99,sort=T)[1:10,])
-  invisible(semPaths(survey.fit99,"model", "std", "lisrel", edge.label.cex = 0.5, intercepts = FALSE, groups = "latent", 
+  invisible(semPaths(survey.fit99,"model", "std", "lisrel", edge.label.cex = 0.6, intercepts = FALSE, groups = "latent", 
                      pastel = TRUE, title = FALSE, optimizeLatRes = TRUE, nCharNodes = 10))
-  title("CFA measurement model", line = 1)
+  title("CFA measurement model", line = 2)
+  cat('  \n')
+  cat('  \n')
+  
+  l1 <- stdl99 %>% data.frame() %>% 
+    ggplot(aes(x = est.std, y = rhs, color = reorder(cntry, desc(cntry)))) +
+    geom_linerange(aes(xmin = ci.lower, xmax = ci.upper), position = position_dodge(0.4)) +
+    geom_jitter(position = position_dodge(0.4)) +
+    facet_wrap(. ~ lhs, scales = "free", ncol = 1)+
+    geom_text(aes(label=cntry),hjust=0, vjust=1, position = position_dodge(0.4), size = 2) +
+    theme(legend.position = "none") +
+    ggtitle("Loading distribution of scales - ICCS 1999") +
+    ylab("") +
+    xlab("Loadings with Confidence Interval") 
+  print(l1)
+  cat('  \n')
+  cat('  \n')
   cat('### Invariance between COUNTRY')
   cat('  \n')
   cat('  \n')
@@ -73,8 +97,11 @@ if (any(grepl("99", years$year))){
                                      Metric = fitMeasures(inv.metr99, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                      Scalar = fitMeasures(inv.scal99, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                      Strict = fitMeasures(inv.stri99, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea"))),3))
-  
-  print(knitr::kable(invarCNT))
+  invarCNT <- invarCNT %>% mutate(Invariance = rownames(invarCNT)) %>% relocate(Invariance, .before = npar) %>% 
+    mutate(D_tli = tli-lag(tli),
+           D_cfi = cfi-lag(cfi),
+           D_rmsea = rmsea-lag(rmsea)) %>% 
+    knitr::kable() %>% print()
   cat('  \n')
   cat('  \n')
   
@@ -102,37 +129,56 @@ if (any(grepl("99", years$year))){
                                       Metric = fitMeasures(inv.metr99, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                       Scalar = fitMeasures(inv.scal99, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                       Strict = fitMeasures(inv.stri99, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea"))),3))
-  
-  print(knitr::kable(invarGNDR))
+  invarGNDR <- invarGNDR %>% mutate(Invariance = rownames(invarGNDR)) %>% relocate(Invariance, .before = npar) %>% 
+    mutate(D_tli = tli-lag(tli),
+           D_cfi = cfi-lag(cfi),
+           D_rmsea = rmsea-lag(rmsea)) %>% 
+    knitr::kable() %>% print()
   cat('  \n')
   cat('  \n')
+
 }
 if (any(grepl("09", years$year))){
   model09<-'
-    Gend_Equal =~ IS2P24A + IS2P24B + IS2P24C + IS2P24D + IS2P24E + IS2P24F
-    Immi_Equal =~ IS2P26A + IS2P26B + IS2P26C + IS2P26D + IS2P26E
-    Ethn_Equal =~ IS2P25A + IS2P25B + IS2P25C + IS2P25D + IS2P25E
+    Gend_Equal =~ IS2P24A + IS2P24B + IS2P24E
+    Immi_Equal =~ IS2P26A + IS2P26C + IS2P26D + IS2P26E
+    Ethn_Equal =~ IS2P25A + IS2P25B + IS2P25C  + IS2P25E
   '
+  #+ IS2P24C + IS2P24D  + IS2P24F
+  #IS2P26B + 
+  #+ IS2P25D
 
   #############2009#########
   cat('## ICCS 2009  \n')
   index09 <- Scales %>% filter(item != "index") %>% dplyr::select(ICCS_2009) %>% na.omit() %>% pull()
-  ds09 <- ICCS %>% filter(!COUNTRY %in% c("CHL", "PER")) %>% dplyr::select(all_of(index09), IDSTUD, TOTWGTS, COUNTRY, SGENDER) %>% 
-    mutate(SGENDER = as.character(SGENDER)) %>% na.omit()  
-  survey.design09 <- svydesign(ids=~IDSTUD, prob=~TOTWGTS, data=ds09)
-  
+  ds09 <- ISC %>% filter(!COUNTRY %in% c("CHL", "PER") & !is.na(TOTWGT_Gc2)) %>% dplyr::select(all_of(index09), IDSTUD, IDSCHOOL,TOTWGT_Gc2, COUNTRY, SGENDER) %>% 
+    mutate(SGENDER = as.character(SGENDER))  
+ # CV09 <- cov(ds09[,all_of(index09)], use = "na.or.complete")
+  survey.design09 <- svydesign(ids=~IDSTUD, prob=~TOTWGT_Gc2, data=ds09)
+  # cfa09 <- lavaan(model09, sample.cov = CV09, 
+  #                 sample.nobs = nrow(ds09), auto.fix.first = TRUE, auto.var = TRUE, int.ov.free = TRUE, auto.cov.lv.x = TRUE, 
+  #                  meanstructure = TRUE)
+  # 
   cfa09 <- lavaan(model09, data = ds09, auto.fix.first = TRUE, auto.var = TRUE, int.ov.free = TRUE, auto.cov.lv.x = TRUE, 
-                  estimator = "MLM", cluster = "COUNTRY", meanstructure = TRUE)
+                  estimator = "MLM", cluster = "IDSCHOOL", meanstructure = TRUE)
   survey.fit09 <- lavaan.survey(lavaan.fit = cfa09, survey.design = survey.design09)
 
   cnt09 <- unique(ds09$COUNTRY)
   meast09 <- NULL
+  stdl09 <- NULL
   for (c09 in cnt09) {
+    survey.cnt09 <- svydesign(ids=~IDSTUD, prob=~TOTWGT_Gc2, data=ds09[ds09$COUNTRY == c09,])
+    
     CNTcfa <- lavaan(model09, data = ds09[ds09$COUNTRY == c09,], auto.fix.first = TRUE, auto.var = TRUE, int.ov.free = TRUE, auto.cov.lv.x = TRUE, 
                      estimator = "MLM", meanstructure = TRUE)
-    survey.CNTfit <- lavaan.survey(lavaan.fit = CNTcfa, survey.design = survey.design09)
+    survey.CNTfit <- lavaan.survey(lavaan.fit = CNTcfa, survey.design = survey.cnt09)
     meas <- fitMeasures(survey.CNTfit, c("chisq","df", "cfi", "tli","rmsea", "srmr"), output = "matrix")
+    meas <- rbind(n = nobs(survey.CNTfit), meas)
     meast09 <- cbind(meast09, meas)
+    stdl <- standardizedSolution(survey.CNTfit) %>% 
+      filter(op == "=~") %>% 
+      mutate(cntry = c09)
+    stdl09 <- rbind(stdl09, stdl)
   }
   meast09 <- as.data.frame(t(meast09))
   rownames(meast09) <- cnt09
@@ -142,18 +188,35 @@ if (any(grepl("09", years$year))){
   cat('  \n')
   meas09 <- fitMeasures(survey.fit09, c("chisq","df","cfi", "tli","rmsea", "srmr"), 
                         output = "matrix")
-  knitr::kable(round(as.data.frame(t(meas09)), 3)) %>% print() 
+  knitr::kable(cbind(n = nobs(survey.fit09), round(as.data.frame(t(meas09)), 3))) %>% print() 
   
   cat('  \n')
   cat('### CFA - ICCS 2009, by countries')
   cat('  \n')
-  knitr::kable(round(meast09, 3)) %>% print() 
+  knitr::kable(meast09,digits = 3) %>% print() 
   cat('  \n')
   cat('  \n')
   #print(modindices(survey.fit09,sort=T)[1:10,])
-  invisible(semPaths(survey.fit09,"model", "std", "lisrel", edge.label.cex = 0.5, intercepts = FALSE, groups = "latent", 
+  invisible(semPaths(survey.fit09,"model", "std", "lisrel", edge.label.cex = 0.6, intercepts = FALSE, groups = "latent", 
                      pastel = TRUE, title = FALSE, optimizeLatRes = TRUE, nCharNodes = 10))
   title("CFA measurement model", line = 2)
+  cat('  \n')
+  cat('  \n')
+  labels <- data.frame(label = tolower(sjlabelled::get_label(ds09)))
+  labels %>% filter(!rownames(.) %in% c("IDSTUD", "IDSCHOOL", "COUNTRY", "TOTWGT_Gc2"))
+  
+  l2 <- stdl09 %>% data.frame() %>% 
+  ggplot(aes(x = est.std, y = rhs, color = reorder(cntry, desc(cntry)))) +
+    geom_linerange(aes(xmin = ci.lower, xmax = ci.upper), position = position_dodge(0.4)) +
+    geom_jitter(position = position_dodge(0.4)) +
+    facet_wrap(. ~ lhs, scales = "free", ncol = 1)+
+    geom_text(aes(label=cntry),hjust=0, vjust=1, position = position_dodge(0.4), size = 2) +
+    theme(legend.position = "none") +
+    ggtitle("Loading distribution of scales - ICCS 2009") +
+    ylab("") +
+    xlab("Loadings with Confidence Interval") 
+    #scale_y_discrete(labels = str_wrap(labels$label,20) )
+  print(l2)
   cat('  \n')
   cat('  \n')
   cat('### Invariance between COUNTRY')
@@ -180,7 +243,11 @@ if (any(grepl("09", years$year))){
                                   Metric = fitMeasures(inv.metr09, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                   Scalar = fitMeasures(inv.scal09, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                   Strict = fitMeasures(inv.stri09, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea"))),3))
-  knitr::kable(invarCNT) %>% print()
+  invarCNT <- invarCNT %>% mutate(Invariance = rownames(invarCNT)) %>% relocate(Invariance, .before = npar) %>% 
+    mutate(D_tli = tli-lag(tli),
+           D_cfi = cfi-lag(cfi),
+           D_rmsea = rmsea-lag(rmsea)) %>% 
+    knitr::kable() %>% print()
   cat('  \n') 
   cat('  \n')
   cat('### Invariance between GENDER')
@@ -207,9 +274,15 @@ if (any(grepl("09", years$year))){
                                      Metric = fitMeasures(inv.metr09, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                      Scalar = fitMeasures(inv.scal09, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                      Strict = fitMeasures(inv.stri09, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea"))),3))
-  knitr::kable(invarGNDR) %>% print()
+  invarGNDR <- invarGNDR %>% mutate(Invariance = rownames(invarGNDR)) %>% relocate(Invariance, .before = npar) %>% 
+    mutate(D_tli = tli-lag(tli),
+           D_cfi = cfi-lag(cfi),
+           D_rmsea = rmsea-lag(rmsea)) %>% 
+    knitr::kable() %>% print()
   cat('  \n')
   cat('  \n')
+
+  
 }
 if (any(grepl("16", years$year))){
   model16<-'
@@ -221,9 +294,9 @@ if (any(grepl("16", years$year))){
   cat('## ICCS 2016  \n')
   cat('  \n')
   index16 <- Scales %>% filter(item != "index") %>% dplyr::select(ICCS_2016) %>% na.omit() %>% pull()
-  ds16 <- ICCS %>% filter(!COUNTRY %in% c("CHL", "PER")) %>% dplyr::select(all_of(index16), IDSTUD, TOTWGTS, COUNTRY, S_GENDER) %>% 
-    mutate(S_GENDER = as.character(S_GENDER)) %>% na.omit()  
-  survey.design16 <- svydesign(ids=~IDSTUD, prob=~TOTWGTS, data=ds16)
+  ds16 <- ISC %>% filter(!COUNTRY %in% c("CHL", "PER") & !is.na(TOTWGT_Gc3)) %>% dplyr::select(all_of(index16), IDSTUD, TOTWGT_Gc3, COUNTRY, S_GENDER) %>% 
+    mutate(S_GENDER = as.character(S_GENDER)) 
+  survey.design16 <- svydesign(ids=~IDSTUD, prob=~TOTWGT_Gc3, data=ds16)
   
   cfa16 <- lavaan(model16, data = ds16, auto.fix.first = TRUE, auto.var = TRUE, int.ov.free = TRUE, auto.cov.lv.x = TRUE, 
                   estimator = "MLM", cluster = "COUNTRY", meanstructure = TRUE)
@@ -231,12 +304,20 @@ if (any(grepl("16", years$year))){
   survey.fit16 <- lavaan.survey(lavaan.fit = cfa16, survey.design = survey.design16)
   cnt16 <- unique(ds16$COUNTRY)
   meast16 <- NULL
+  stdl16 <- NULL
   for (c16 in cnt16) {
+    survey.cnt16 <- svydesign(ids=~IDSTUD, prob=~TOTWGT_Gc3, data=ds16[ds16$COUNTRY == c16,])
+    
     CNTcfa <- lavaan(model16, data = ds16[ds16$COUNTRY == c16,], auto.fix.first = TRUE, auto.var = TRUE, int.ov.free = TRUE, auto.cov.lv.x = TRUE, 
                      estimator = "MLM", meanstructure = TRUE)
-    survey.CNTfit <- lavaan.survey(lavaan.fit = CNTcfa, survey.design = survey.design16)
+    survey.CNTfit <- lavaan.survey(lavaan.fit = CNTcfa, survey.design = survey.cnt16)
     meas <- fitMeasures(survey.CNTfit, c("chisq","df", "cfi", "tli","rmsea", "srmr"), output = "matrix")
+    meas <- rbind(n = nobs(survey.CNTfit), meas)
     meast16 <- cbind(meast16, meas)
+    stdl <- standardizedSolution(survey.CNTfit) %>% 
+      filter(op == "=~") %>% 
+      mutate(cntry = c16)
+    stdl16 <- rbind(stdl16, stdl)
   }
   meast16 <- as.data.frame(t(meast16))
   rownames(meast16) <- cnt16
@@ -246,18 +327,32 @@ if (any(grepl("16", years$year))){
   cat('  \n')
   meas16 <- fitMeasures(survey.fit16, c("chisq","df","cfi", "tli","rmsea", "srmr"), 
                         output = "matrix")
-  knitr::kable(round(as.data.frame(t(meas16)), 3)) %>% print() 
+  knitr::kable(cbind(n = nobs(survey.fit16), round(as.data.frame(t(meas16)), 3))) %>% print() 
   
   cat('  \n')
   cat('### CFA - ICCS 2016, by countries')
   cat('  \n')
-  knitr::kable(round(meast16, 3)) %>% print() 
+  knitr::kable(meast16, digits = 3) %>% print() 
   cat('  \n')
   cat('  \n')
   #print(modindices(survey.fit16,sort=T)[1:10,])
-  invisible(semPaths(survey.fit16,"model", "std", "lisrel", edge.label.cex = 0.5, intercepts = FALSE, groups = "latent", 
+  invisible(semPaths(survey.fit16,"model", "std", "lisrel", edge.label.cex = 0.6, intercepts = FALSE, groups = "latent", 
                      pastel = TRUE, title = FALSE, optimizeLatRes = TRUE, nCharNodes = 10))
-  title("CFA measurement model", line = 1)
+  title("CFA measurement model", line = 2)
+  cat('  \n')
+  cat('  \n')
+  
+  l3 <- stdl16 %>% data.frame() %>% 
+    ggplot(aes(x = est.std, y = rhs, color = reorder(cntry, desc(cntry)))) +
+    geom_linerange(aes(xmin = ci.lower, xmax = ci.upper), position = position_dodge(0.4)) +
+    geom_jitter(position = position_dodge(0.4)) +
+    facet_wrap(. ~ lhs, scales = "free", ncol = 1)+
+    geom_text(aes(label=cntry),hjust=0, vjust=1, position = position_dodge(0.4), size = 2) +
+    theme(legend.position = "none") +
+    ggtitle("Loading distribution of scales - ICCS 2016") +
+    ylab("") +
+    xlab("Loadings with Confidence Interval") 
+  print(l3)
   cat('  \n')
   cat('  \n')
   cat('### Invariance between COUNTRY')
@@ -284,7 +379,11 @@ if (any(grepl("16", years$year))){
                                   Metric = fitMeasures(inv.metr16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                   Scalar = fitMeasures(inv.scal16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                   Strict = fitMeasures(inv.stri16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea"))),3))
-  knitr::kable(invarCNT) %>% print()
+  invarCNT <- invarCNT %>% mutate(Invariance = rownames(invarCNT)) %>% relocate(Invariance, .before = npar) %>% 
+    mutate(D_tli = tli-lag(tli),
+           D_cfi = cfi-lag(cfi),
+           D_rmsea = rmsea-lag(rmsea)) %>% 
+    knitr::kable() %>% print()
   cat('  \n')
   cat('  \n')
   cat('### Invariance between GENDER')
@@ -311,7 +410,15 @@ if (any(grepl("16", years$year))){
                                   Metric = fitMeasures(inv.metr16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                   Scalar = fitMeasures(inv.scal16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                   Strict = fitMeasures(inv.stri16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea"))),3))
-  knitr::kable(invarGNDR) %>% print()
+  invarGNDR <- invarGNDR %>% mutate(Invariance = rownames(invarGNDR)) %>% relocate(Invariance, .before = npar) %>% 
+    mutate(D_tli = tli-lag(tli),
+           D_cfi = cfi-lag(cfi),
+           D_rmsea = rmsea-lag(rmsea)) %>% 
+    knitr::kable() %>% print()
   cat('  \n')
   cat('  \n')
 }
+
+#predict(survey.fit09)
+#library(CTT)
+#score.transform(scores, mu.new = 50, sd.new = 10, normalize = FALSE)

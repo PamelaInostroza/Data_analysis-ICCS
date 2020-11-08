@@ -1,0 +1,130 @@
+VERSION 1.0.0
+INPUT
+TITLE:
+ One Factor CFA Identifying Variance = 1
+DATA:
+ FILE IS CFADNK.dat;
+VARIABLE:
+ NAMES ARE IS2P26A IS2P26B IS2P26C IS2P26D IS2P26E IS2P24A
+IS2P24B IS2P24C IS2P24D IS2P24E IS2P24F IS2P25A IS2P25B IS2P25C IS2P25D
+IS2P25E COUNTRY;
+USEVARIABLES IS2P24A IS2P24B IS2P24E IS2P26A IS2P26C
+ IS2P26D IS2P26E IS2P25A IS2P25B IS2P25C IS2P25E;
+ MISSING ARE .;
+ANALYSIS:
+ ESTIMATOR = ML;
+OUTPUT:
+ STDYX;
+MODEL:
+    Gend_Equ BY IS2P24A IS2P24B IS2P24E;
+    Immi_Equ BY IS2P26A IS2P26C IS2P26D IS2P26E;
+    Ethn_Equ BY IS2P25A IS2P25B IS2P25C IS2P25E;
+    Gend_Equ @1;
+    Immi_Equ @1;
+    Ethn_Equ @1;
+INPUT_END
+2
+2
+0
+2
+1
+GENERAL
+0
+11
+3
+0
+is2p24a is2p24b is2p24e is2p26a is2p26c is2p26d is2p26e is2p25a is2p25b is2p25c is2p25e gend_equ immi_equ ethn_equ
+1
+-1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 0 0 0
+0
+3
+gend_equ
+is2p24a is2p24b is2p24e
+immi_equ
+is2p26a is2p26c is2p26d is2p26e
+ethn_equ
+is2p25a is2p25b is2p25c is2p25e
+1 1 gend_equ is2p24a    1.000    0.000
+1 1 gend_equ is2p24b    0.901    0.012
+1 1 gend_equ is2p24e    0.713    0.017
+1 1 immi_equ is2p26a    1.000    0.000
+1 1 immi_equ is2p26c    0.831    0.017
+1 1 immi_equ is2p26d    0.793    0.018
+1 1 immi_equ is2p26e    0.939    0.016
+1 1 ethn_equ is2p25a    1.000    0.000
+1 1 ethn_equ is2p25b    0.995    0.008
+1 1 ethn_equ is2p25c    0.699    0.016
+1 1 ethn_equ is2p25e    0.836    0.013
+2 1 immi_equ gend_equ    0.795    0.007
+2 1 ethn_equ gend_equ    0.784    0.006
+2 1 ethn_equ immi_equ    0.901    0.004
+4 1 is2p24a    0.072    0.004
+4 1 is2p24b    0.097    0.004
+4 1 is2p24e    0.303    0.007
+4 1 is2p26a    0.497    0.013
+4 1 is2p26c    0.302    0.008
+4 1 is2p26d    0.335    0.009
+4 1 is2p26e    0.186    0.006
+4 1 is2p25a    0.060    0.002
+4 1 is2p25b    0.053    0.002
+4 1 is2p25c    0.432    0.010
+4 1 is2p25e    0.232    0.005
+5 1 gend_equ    1.000    0.000
+5 1 immi_equ    1.000    0.000
+5 1 ethn_equ    1.000    0.000
+11 1 gend_equ is2p24a    0.966    0.002
+11 1 gend_equ is2p24b    0.945    0.003
+11 1 gend_equ is2p24e    0.792    0.008
+11 1 immi_equ is2p26a    0.817    0.003
+11 1 immi_equ is2p26c    0.834    0.007
+11 1 immi_equ is2p26d    0.808    0.008
+11 1 immi_equ is2p26e    0.909    0.004
+11 1 ethn_equ is2p25a    0.971    0.001
+11 1 ethn_equ is2p25b    0.974    0.001
+11 1 ethn_equ is2p25c    0.728    0.009
+11 1 ethn_equ is2p25e    0.867    0.004
+12 1 immi_equ gend_equ    0.795    0.007
+12 1 ethn_equ gend_equ    0.784    0.006
+12 1 ethn_equ immi_equ    0.901    0.004
+14 1 is2p24a    0.067    0.003
+14 1 is2p24b    0.106    0.005
+14 1 is2p24e    0.373    0.013
+14 1 is2p26a    0.332    0.006
+14 1 is2p26c    0.305    0.011
+14 1 is2p26d    0.348    0.013
+14 1 is2p26e    0.175    0.008
+14 1 is2p25a    0.057    0.002
+14 1 is2p25b    0.051    0.002
+14 1 is2p25c    0.469    0.013
+14 1 is2p25e    0.249    0.008
+15 1 gend_equ    1.000    0.000
+15 1 immi_equ    1.000    0.000
+15 1 ethn_equ    1.000    0.000
+31 1 gend_equ is2p24a    1.000    0.000
+31 1 gend_equ is2p24b    0.901    0.012
+31 1 gend_equ is2p24e    0.713    0.017
+31 1 immi_equ is2p26a    1.000    0.000
+31 1 immi_equ is2p26c    0.831    0.017
+31 1 immi_equ is2p26d    0.793    0.018
+31 1 immi_equ is2p26e    0.939    0.016
+31 1 ethn_equ is2p25a    1.000    0.000
+31 1 ethn_equ is2p25b    0.995    0.008
+31 1 ethn_equ is2p25c    0.699    0.016
+31 1 ethn_equ is2p25e    0.836    0.013
+32 1 immi_equ gend_equ    0.795    0.007
+32 1 ethn_equ gend_equ    0.784    0.006
+32 1 ethn_equ immi_equ    0.901    0.004
+34 1 is2p24a    0.072    0.004
+34 1 is2p24b    0.097    0.004
+34 1 is2p24e    0.303    0.007
+34 1 is2p26a    0.497    0.013
+34 1 is2p26c    0.302    0.008
+34 1 is2p26d    0.335    0.009
+34 1 is2p26e    0.186    0.006
+34 1 is2p25a    0.060    0.002
+34 1 is2p25b    0.053    0.002
+34 1 is2p25c    0.432    0.010
+34 1 is2p25e    0.232    0.005
+35 1 gend_equ    1.000    0.000
+35 1 immi_equ    1.000    0.000
+35 1 ethn_equ    1.000    0.000

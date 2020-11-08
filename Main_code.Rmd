@@ -32,7 +32,7 @@ a. Nordic Countries: Denmark, Finland, Norway, Sweden.
 b. Western European Countries: Belgium (Flemish), The Netherlands.  
 c. Central and Eastern European Countries: Bulgaria, Estonia, Latvia, Lithuania, Croatia, Slovenia.  
 d. Southern European Countries: Italy, Malta.  
-e. Latin American Countries: Chile, Peru.  
+e. Latin American Countries: Chile, Peru, Colombia, Dominican Republic, Mexico.  
 
 ```{r data}
 Countries <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "CNT")
@@ -42,7 +42,7 @@ CNTa <- c("DNK", "FIN", "NOR", "SWE")
 CNTb <- c("BFL", "NLD")
 CNTc <- c("BGR", "EST", "LVA", "LTU", "HRV", "SVN")
 CNTd <- c("ITA", "MLT")
-CNTe <- c("CHL", "PER")
+CNTe <- c("CHL", "PER", "COL", "DOM", "MEX")
 CNT <- c(CNTa, CNTb, CNTc, CNTd, CNTe)
 # c(AUS", "BFL", "BGR", "CHE", "CHL", "COL", "CYP", "CZE", "DEU", "DNK", "DOM", "ENG", "ESP", "EST", "FIN", "FRA", "GRC", "HKG", "HRV", "HUN", "ISR", "ITA", "KOR", "LTU", "LVA", "MEX", "MLT", "NLD", "NOR", "PER", "POL", "PRT", "ROM", "RUS", "SRB", "SVK", "SVN", "SWE", "TWN", "USA") CNTb #
 
@@ -74,8 +74,8 @@ for (cnt in CNT) {
       if (yearn == "22") cycle = "C4"
     if (yearn == "99") {
       filenames <- c(filenames, paste0(Folder, "/Data/", "bs_", tolower(cnt), cycle,".sav"))
-      filenames <- c(filenames, paste0(Folder, "/Data/", "bt_", tolower(cnt), cycle,".sav"))
-      filenames <- c(filenames, paste0(Folder, "/Data/", "bc_", tolower(cnt), cycle,".sav"))
+      if (cnt %in% Teacher$AlphaCode) filenames <- c(filenames, paste0(Folder, "/Data/", "bt_", tolower(cnt), cycle,".sav"))
+      if (cnt %in% School$AlphaCode) filenames <- c(filenames, paste0(Folder, "/Data/", "bc_", tolower(cnt), cycle,".sav"))
     } else {
       if (cnt %in% CountryLA$AlphaCode) filenames <- c(filenames, paste0(Folder, "/Data/", "ISL",cnt,cycle,".sav"))
       if (cnt %in% CountryEU$AlphaCode) filenames <- c(filenames, paste0(Folder, "/Data/", "ISE",cnt,cycle,".sav")) 
@@ -200,7 +200,7 @@ ICGC2$questC <- "ICG"
 ICGC3$questC <- "ICG"
 
 ISGC1 <- ISGC1 %>% rename_at(vars(c("TOTWGT","SENWGT")), ~ c("TOTWGT_Gc1", "SENWGT_Gc1"))
-ISGC2 <- ISGC2 %>% rename_at(vars(c("TOTWGTS","SENWGTS")), ~ c("TOTWGT_Gc2", "SENWGT_Gc2"))
+ISGC2 <- ISGC2 %>% rename_at(vars(c("TOTWGTS","SENWGTS", "HOMELIT")), ~ c("TOTWGT_Gc2", "SENWGT_Gc2","SHOMELIT"))
 ISGC3 <- ISGC3 %>% rename_at(vars(c("TOTWGTS")), ~ c("TOTWGT_Gc3"))
 
 ISEC2 <- ISEC2 %>% rename_at(vars(c("TOTWGTS","SENWGTS")), ~ c("TOTWGT_Ec2", "SENWGT_Ec2"))
@@ -447,15 +447,6 @@ ICG <- ICGC1 %>%
 ```{r Saveddata, results='asis'}
 #save(VarsToUse, ISC, ITG, ICG, file = "Data_analysis/ICCSAll.RData")
 
-# ICCS %>% dplyr::select(TOTWGT_Gc1,SENWGT_Gc1, TOTWGT_Gc2,SENWGT_Gc2, TOTWGT_Gc3,SENWGT_Gc3,COUNTRY, cycle, questG, questL, questE) %>% 
-#   group_by(COUNTRY, cycle, questG, questL, questE) %>% 
-#   summarise(w99 = sum(TOTWGT_Gc1, na.rm = TRUE),
-#             w99s =sum(SENWGT_Gc1, na.rm = TRUE),
-#             w09 = sum(TOTWGT_Gc2, na.rm = TRUE),
-#             w09s =sum(SENWGT_Gc2, na.rm = TRUE),
-#             w16 = sum(TOTWGT_Gc3, na.rm = TRUE),
-#             w16s =sum(SENWGT_Gc3, na.rm = TRUE)) %>% 
-#   print(n = 54)
 
 load("Data_analysis/ICCSAll.RData")
 #load("Data_analysis/ICCS.RData")
@@ -535,12 +526,20 @@ source("Data_analysis/Descriptive_Analysis.R")
 ```
 
 
-
 # Confirmatory Factor Analysis (CFA)  
 
-```{r cfa, out.width = '100%', out.height='100%', results = 'asis'}
+```{r cfa, fig.height = 9, fig.width = 9, results = 'asis'}
 
 source("Data_analysis/cfa.R")
+
+```
+
+# Multilevel modelling (MLM)  
+
+```{r mlm, fig.height = 9, fig.width = 7, results = 'asis'}
+
+load("Data_analysis/ICCSAll_lv.RData")
+#source("Data_analysis/mlm.R")
 
 ```
 

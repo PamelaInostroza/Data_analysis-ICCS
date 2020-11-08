@@ -182,3 +182,4 @@ setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/Da
       } 
     }
   }
+  

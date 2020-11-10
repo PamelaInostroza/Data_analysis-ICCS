@@ -519,7 +519,7 @@ ICG %>% dplyr::select(TOTWGT_Cc1,SENWGT_Cc1, COUNTRY, cycle, questC) %>%
 
 # Description of variables  
 
-```{r descriptive, fig.height = 8, fig.width = 7, results = 'asis', fig.show='asis'}
+```{r descriptive, fig.height = 8, fig.width = 7, results = 'asis', fig.show='asis', eval=FALSE}
 
 source("Data_analysis/Descriptive_Analysis.R")
 
@@ -528,7 +528,7 @@ source("Data_analysis/Descriptive_Analysis.R")
 
 # Confirmatory Factor Analysis (CFA)  
 
-```{r cfa, fig.height = 9, fig.width = 9, results = 'asis'}
+```{r cfa, fig.height = 9, fig.width = 9, results = 'asis', eval=FALSE}
 
 source("Data_analysis/cfa.R")
 
@@ -539,8 +539,33 @@ source("Data_analysis/cfa.R")
 ```{r mlm, fig.height = 9, fig.width = 7, results = 'asis'}
 
 load("Data_analysis/ICCSAll_lv.RData")
-#source("Data_analysis/mlm.R")
-
+source("Data_analysis/mlm.R")
+cat('\n')
+cat('\n')
+cat('## Three level Null model: School nested in countries and in cycles  \n')
+t1
+cat('\n')
+cat('\n')
+cat('## Two level Null model: School nested in countries by cycles')
+cat('\n')
+cat('\n')
+t2
+t3
+t4
+cat('\n')
+cat('\n')
+cat('## Three level model: School nested in countries and in cycles')
+cat('\n')
+cat('\n')
+t5
+cat('\n')
+cat('\n')
+cat('## Two level model: School nested in countries by cycles')
+cat('\n')
+cat('\n')
+b11
+b21
+b31
 ```
 
 # Latent Class Analysis  (LCA)
@@ -551,4 +576,5 @@ library(poLCA)
 #LCA1 <- poLCA(, data = ICCS, nclass = 2, graphs = TRUE, na.rm = TRUE)
 
 ```
+
 

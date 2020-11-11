@@ -1,16 +1,24 @@
 ---
-title: "ICCS datafiles 1999/2009/2016/2022"
+title: "Attitudes toward equality - CIVED 1999/ ICCS 2009/ ICCS 2016"
+author: "Pamela Inostroza Fernández"
+date: "November 2020"
 output: 
   html_document:
+    keep_md: true
     toc: TRUE
-    toc_float: TRUE
-editor_options: 
-  chunk_output_type: console
+    toc_depth: 1
+    toc_float: 
+      collapsed: true
+    number_sections: true
+    theme: united
+    highlight: tango
 ---
 
-# Files available
+# Files analyzed  
 
-Selected countries and years (cycle) to analyse 
+The present document has the finality of summarize all possibles analysis that can be done using CIVED/ICCS data set to study the scales regarding Attitudes toward minorities, such as **Attitudes toward equal rights for all ethnic/racial groups**, **Attitudes toward gender equality** and **Attitudes toward equal rights for immigrants**. Three cycles are available and multiple countries participate in each one of them.
+
+This summary include the following selected countries and years (cycle) in the analysis.  
 
 ```{r setup, echo = FALSE, message = FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
@@ -27,6 +35,8 @@ sys.source("Data_analysis/functions.R", envir = knitr::knit_global())
 ```  
 
 **Participant countries**  
+
+The participant countries were divided in 5 groups:  
 
 a. Nordic Countries: Denmark, Finland, Norway, Sweden.  
 b. Western European Countries: Belgium (Flemish), The Netherlands.  
@@ -52,13 +62,13 @@ years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% dplyr::sele
 
 ```{r namesfiles, comment=""}
 filenames <- NULL
-print("Countries selected and year participation in ICCS:")
+cat("Countries selected and year participation in CIVED/ICCS:")
 
 for (cnt in CNT) {
 
   yearf <- years %>% filter(AlphaCode == cnt & year != 22) %>% arrange(as.numeric(year))
   
-  print(paste0(unique(yearf$Country), " :", paste(sort(ifelse(yearf$year == "99", paste0("19",yearf$year), paste0("20",yearf$year))), collapse = " ")))
+  cat(paste0(unique(yearf$Country), " :", paste(sort(ifelse(yearf$year == "99", paste0("19",yearf$year), paste0("20",yearf$year))), collapse = " ")))
 
   for (yearn in yearf$year) {
  
@@ -442,7 +452,7 @@ ICG <- ICGC1 %>%
 
 ```
 
-**Weights and sample size**  
+**Weights and sample size** of each cycle, **n\*** corresponds to the sample size, **w\*** to the total weight and **w\*s** the senate weight.  
 
 ```{r Saveddata, results='asis'}
 #save(VarsToUse, ISC, ITG, ICG, file = "Data_analysis/ICCSAll.RData")
@@ -451,7 +461,7 @@ ICG <- ICGC1 %>%
 load("Data_analysis/ICCSAll.RData")
 #load("Data_analysis/ICCS.RData")
 
-cat('Student questionnaires  \n')
+cat(' \n')
 cat("\n")
 ISC %>% dplyr::select(TOTWGT_Gc1, SENWGT_Gc1, COUNTRY, cycle, questG) %>% 
   filter(!is.na(TOTWGT_Gc1)) %>% 
@@ -472,8 +482,8 @@ ISC %>% dplyr::select(TOTWGT_Gc1, SENWGT_Gc1, COUNTRY, cycle, questG) %>%
                               w16 = sum(TOTWGT_Gc3, na.rm = TRUE),
                               w16s =sum(SENWGT_Gc3, na.rm = TRUE)),by = c("COUNTRY", "questG")) %>% 
   arrange(COUNTRY) %>% 
-  knitr::kable()
-cat('Teacher questionnaires  \n')
+  knitr::kable(caption = "Student questionnaires")
+cat('  \n')
 cat("\n")
 ITG %>% dplyr::select(TOTWGT_Tc2,SENWGT_Tc2, COUNTRY, cycle, questT) %>% 
   filter(!is.na(TOTWGT_Tc2)) %>% 
@@ -491,8 +501,8 @@ ITG %>% dplyr::select(TOTWGT_Tc2,SENWGT_Tc2, COUNTRY, cycle, questT) %>%
                               w16 = sum(TOTWGT_Tc3, na.rm = TRUE),
                               w16s =sum(SENWGT_Tc3, na.rm = TRUE)),by = c("COUNTRY", "questT")) %>% 
   arrange(COUNTRY) %>% 
-  knitr::kable()
-cat('School questionnaires  \n')
+  knitr::kable(caption = "Teacher questionnaires")
+cat('  \n')
 cat("\n")
 ICG %>% dplyr::select(TOTWGT_Cc1,SENWGT_Cc1, COUNTRY, cycle, questC) %>% 
   filter(!is.na(TOTWGT_Cc1)) %>% 
@@ -513,22 +523,29 @@ ICG %>% dplyr::select(TOTWGT_Cc1,SENWGT_Cc1, COUNTRY, cycle, questC) %>%
                               w16 = sum(TOTWGT_Cc3, na.rm = TRUE),
                               w16s =sum(SENWGT_Cc3, na.rm = TRUE)), by = c("COUNTRY", "questC")) %>% 
   arrange(COUNTRY) %>% 
-  knitr::kable()
+  knitr::kable(caption = "School questionnaires")
 
 ```
 
-# Description of variables  
+# Description of variables  {.tabset .tabset-fade .tabset-pills}
 
-```{r descriptive, fig.height = 8, fig.width = 7, results = 'asis', fig.show='asis', eval=FALSE}
+In this section variables available in each data set regarding the constructs of interest are described. Barplots are drawn by country using their respective weights. The frequencies are differentiated by Gender and by the Total sample.    
+The indexed of each respective scale are also plotted in a violin diagram, orderer by the weighted mean of each country. The boxplot of the distribution of the data is also included. Dotted line represent the weighted mean for each subgroup and Total.  
+Each cycle can be seen in each tab in this section.
+ 
+
+```{r descriptive, fig.height = 8, fig.width = 7, results = 'asis', fig.show='asis'}
 
 source("Data_analysis/Descriptive_Analysis.R")
 
 ```
 
+# Confirmatory Factor Analysis (CFA)  {.tabset .tabset-fade .tabset-pills}
 
-# Confirmatory Factor Analysis (CFA)  
+In this section, a confirmatory factor analysis for the three scales analysed is performed, using weights and complexity of the sample was taken into account. Invariance analysis was also performed to Gender groups and Country groups.  
+Each cycle can be seen in each tab in this section. Finally, last tab show the scores obtained by each model, which are saved and used in the following sections.  
 
-```{r cfa, fig.height = 9, fig.width = 9, results = 'asis', eval=FALSE}
+```{r cfa, fig.height = 9, fig.width = 9, results = 'asis'}
 
 source("Data_analysis/cfa.R")
 
@@ -536,17 +553,34 @@ source("Data_analysis/cfa.R")
 
 # Multilevel modelling (MLM)  
 
+In this section a multilevel model was performed to evaluate the variability of the scale considering the nested structure of the data. The first model use the three cycles of CIVED/ICCS as a level, followed by Country level and finally School level.
+Next, The analysis is performed to all countries participating in each cycle separately, using country and school level. 
+Results are obtained for the models indicated using Null model followed by the model with some explanatory variables at the student level.  
+
 ```{r mlm, fig.height = 9, fig.width = 7, results = 'asis'}
 
 load("Data_analysis/ICCSAll_lv.RData")
 source("Data_analysis/mlm.R")
 cat('\n')
 cat('\n')
-cat('## Three level Null model: School nested in countries and in cycles  \n')
+cat('## Three level model: School nested in countries and in cycles  \n')
+cat('\n')
+cat('\n')
+cat('### Null model  \n')
 t1
 cat('\n')
 cat('\n')
-cat('## Two level Null model: School nested in countries by cycles')
+cat('### Model 1  \n')
+cat('\n')
+cat('\n')
+t5
+cat('\n')
+cat('\n')
+
+cat('## Two level model: School nested in countries by cycles  \n')
+cat('\n')
+cat('\n')
+cat('### Null model  \n')
 cat('\n')
 cat('\n')
 t2
@@ -554,13 +588,10 @@ t3
 t4
 cat('\n')
 cat('\n')
-cat('## Three level model: School nested in countries and in cycles')
+
 cat('\n')
 cat('\n')
-t5
-cat('\n')
-cat('\n')
-cat('## Two level model: School nested in countries by cycles')
+cat('### Model 1  \n')
 cat('\n')
 cat('\n')
 b11
@@ -568,13 +599,29 @@ b21
 b31
 ```
 
-# Latent Class Analysis  (LCA)
+# Latent Class Analysis  (LCA) {.tabset .tabset-fade .tabset-pills}
+
+Under construction...
 
 ```{r}
 
-library(poLCA)
-#LCA1 <- poLCA(, data = ICCS, nclass = 2, graphs = TRUE, na.rm = TRUE)
+cat('\n')
+cat('\n')
+cat('## CIVED 1999')
+cat('\n')
+cat('\n')
+#source("Data_analysis/lca.R")
+cat('\n')
+cat('\n')
+cat('## ICCS 2009')
+cat('\n')
+cat('\n')
 
+cat('\n')
+cat('\n')
+cat('## ICCS 2016')
+cat('\n')
+cat('\n')
 ```
 
 

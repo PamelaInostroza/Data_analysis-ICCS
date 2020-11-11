@@ -57,33 +57,33 @@ mNullImmi <- lmer(Immi_Equal ~  (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY
                   data=ds_ml0, weights=SENWGT, REML=FALSE)
 t1 <- tab_model(mNullEthn, mNullGndr, mNullImmi)
 
-modelNullEthnC1 <- lmer(Ethn_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),  
+modelNullEthnC1 <- lmer(Ethn_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                     data=ds_ml0[ds_ml0$cycle == "C1",], weights=SENWGT,  REML=FALSE)
-modelNullGndrC1 <- lmer(Gend_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),  
+modelNullGndrC1 <- lmer(Gend_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                     data=ds_ml0[ds_ml0$cycle == "C1",], weights=SENWGT,  REML=FALSE)
-modelNullImmiC1 <- lmer(Immi_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),  
+modelNullImmiC1 <- lmer(Immi_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                     data=ds_ml0[ds_ml0$cycle == "C1",], weights=SENWGT,  REML=FALSE)
 
-modelNullEthnC2 <- lmer(Ethn_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),  
+modelNullEthnC2 <- lmer(Ethn_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                     data=ds_ml0[ds_ml0$cycle == "C2",], weights=SENWGT,  REML=FALSE)
-modelNullGndrC2 <- lmer(Gend_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),  
+modelNullGndrC2 <- lmer(Gend_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                     data=ds_ml0[ds_ml0$cycle == "C2",], weights=SENWGT,  REML=FALSE)
-modelNullImmiC2 <- lmer(Immi_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),  
+modelNullImmiC2 <- lmer(Immi_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                     data=ds_ml0[ds_ml0$cycle == "C2",], weights=SENWGT,  REML=FALSE)
 
-modelNullEthnC3 <- lmer(Ethn_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),  
+modelNullEthnC3 <- lmer(Ethn_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                     data=ds_ml0[ds_ml0$cycle == "C3",], weights=SENWGT,  REML=FALSE)
-modelNullGndrC3 <- lmer(Gend_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),  
+modelNullGndrC3 <- lmer(Gend_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                     data=ds_ml0[ds_ml0$cycle == "C3",], weights=SENWGT,  REML=FALSE)
-modelNullImmiC3 <- lmer(Immi_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),  
+modelNullImmiC3 <- lmer(Immi_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                     data=ds_ml0[ds_ml0$cycle == "C3",], weights=SENWGT,  REML=FALSE)
-t2 <- tab_model(modelNullEthnC1, modelNullEthnC2, modelNullEthnC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"), 
-                title = "Attitudes toward equal rights for all ethnic/racial groups") 
+t2 <- tab_model(modelNullEthnC1, modelNullEthnC2, modelNullEthnC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
+                title = "Attitudes toward equal rights for all ethnic/racial groups")
 
-t3 <- tab_model(modelNullGndrC1, modelNullGndrC2, modelNullGndrC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"), 
-                title = "Attitudes toward gender equality") 
+t3 <- tab_model(modelNullGndrC1, modelNullGndrC2, modelNullGndrC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
+                title = "Attitudes toward gender equality")
 
-t4 <- tab_model(modelNullImmiC1, modelNullImmiC2, modelNullImmiC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"), 
+t4 <- tab_model(modelNullImmiC1, modelNullImmiC2, modelNullImmiC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
                 title = "Attitudes toward equal rights for immigrants")
 
 
@@ -93,7 +93,7 @@ t4 <- tab_model(modelNullImmiC1, modelNullImmiC2, modelNullImmiC3, dv.labels = c
 # cntryless2 <- ds_ml0 %>% group_by(COUNTRY) %>% count(cycle) %>% count(COUNTRY) %>% filter(n == 1) %>% select(COUNTRY) %>% pull()
 # ds_ml0cntrygreat1 <- ds_ml0 %>% filter(!COUNTRY %in% cntryless2)
 # cntrynull <- lapply(split(ds_ml0cntrygreat1,ds_ml0cntrygreat1$COUNTRY),
-#        lmer, formula = Ethn_Equal ~ (1|cycle) + (1|cycle:IDSCHOOL), REML=FALSE )#, 
+#        lmer, formula = Ethn_Equal ~ (1|cycle) + (1|cycle:IDSCHOOL), REML=FALSE )#,
 #        #weights=list(split(ds_ml0cntrygreat1$SENWGT,ds_ml0cntrygreat1$COUNTRY)))
 # print(tab_model(cntrynull[1:4], dv.labels = sort(unique(ds_ml0cntrygreat1$COUNTRY))[1:4]))
 # print(tab_model(cntrynull[5:8], dv.labels = sort(unique(ds_ml0cntrygreat1$COUNTRY))[5:8]))
@@ -110,10 +110,10 @@ ds_ml1 <- ISC_lv %>%
 mM1Ethn <- lmer(Ethn_Equal ~ T_AGE + T_GENDER + T_HOMELIT +
                     (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL),
                   data=ds_ml1, weights=SENWGT, REML=FALSE)
-mM1Gndr <- lmer(Gend_Equal ~ T_AGE + T_GENDER + T_HOMELIT + 
+mM1Gndr <- lmer(Gend_Equal ~ T_AGE + T_GENDER + T_HOMELIT +
                     (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL),
                   data=ds_ml1, weights=SENWGT, REML=FALSE)
-mM1Immi <- lmer(Immi_Equal ~ T_AGE + T_GENDER + T_HOMELIT + 
+mM1Immi <- lmer(Immi_Equal ~ T_AGE + T_GENDER + T_HOMELIT +
                     (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL),
                   data=ds_ml1, weights=SENWGT, REML=FALSE)
 t5 <- tab_model(mM1Ethn, mM1Gndr, mM1Immi)

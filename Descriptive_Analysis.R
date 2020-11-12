@@ -24,11 +24,11 @@
     cat("  \n")
     hl <- ha %>% filter(Construct == unique(ha$Construct)[j]) %>% na.omit()
     constr_name <- hl$value
-    ind_name1 <- index1 %>% filter(name == "CIVED_1999")  %>%  na.omit()
+    ind_name1 <- index1 %>% filter(name == "CIVED_1999")
     ind_name <- ind_name1$value
     cat("  \n")
     cat("  \n")
-    cat(paste('#### Items:', paste(constr_name,collapse = ", "),'  \n'))
+    cat(paste('**Items:', paste(constr_name,collapse = ", "),'**  \n'))
     cat("  \n")
     cat("  \n")
     for (i in 1:length(constr_name)){
@@ -54,10 +54,10 @@
     	print(g1)
     }
     ind_name <- ind_name1$value[j]
-    if(index1$name[j] == "CIVED_1999" & ind_name != "MINORMLE"){
+    if (ind_name != "MINORMLE"){
       cat("  \n")
       cat("  \n")
-      cat(paste('#### Index:', paste(unique(index$D1)[j],collapse = ", "),'  \n'))
+      cat(paste('**Index:', paste(unique(index$D1)[j],collapse = ", "),'**  \n'))
       cat("  \n")
       cat("  \n")
       
@@ -104,7 +104,7 @@
     ind_name <- ind_name1$value
     cat("  \n")
     cat("  \n")
-    cat(paste('#### Items:', paste(constr_name,collapse = ", "),'  \n'))
+    cat(paste('**Items:', paste(constr_name,collapse = ", "),'**  \n'))
     cat("  \n")
     cat("  \n")
     for (i in 1:length(constr_name)){
@@ -127,7 +127,9 @@
 		        theme(axis.text.y=element_blank(),axis.ticks.y=element_blank())
   		print(g2)
     }
-  	cat(paste('#### Index:', paste(unique(index$D2)[j],collapse = ", "),'  \n'))
+    cat("  \n")
+    cat("  \n")
+  	cat(paste('**Index:', paste(unique(index$D2)[j],collapse = ", "),'**  \n'))
   	cat("  \n")
   	cat("  \n")
   	ind_name <- ind_name1$value[j]
@@ -157,7 +159,7 @@
   ha <- items %>% filter(name == "ICCS_2016")
   cat("  \n")
   cat("  \n")
-  cat('##ICCS 2016  \n')
+  cat('## ICCS 2016  \n')
   cat("  \n")
   cat("  \n")
   for (j in 1:length(unique(ha$Construct))){
@@ -172,7 +174,7 @@
     ind_name <- ind_name1$value
     cat("  \n")
     cat("  \n")
-    cat(paste('#### Items:', paste(constr_name,collapse = ", "),'  \n'))
+    cat(paste('**Items:', paste(constr_name,collapse = ", "),'**  \n'))
     cat("  \n")
     cat("  \n")
     for (i in 1:length(constr_name)){
@@ -195,8 +197,10 @@
 		        scale_x_discrete(label = function(x) str_wrap(x,10)) +
 		        theme(axis.text.y=element_blank(),axis.ticks.y=element_blank())
 		  print(g3)
-    }
-	  cat(paste('#### Index:', paste(unique(index$D3)[j],collapse = ", "),'  \n'))
+    }    
+    cat("  \n")
+    cat("  \n")
+	  cat(paste('**Index:', paste(unique(index$D3)[j],collapse = ", "),'**  \n'))
 	  cat("  \n")
 	  cat("  \n")
 	  ind_name <- ind_name1$value[j]

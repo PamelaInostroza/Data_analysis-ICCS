@@ -16,7 +16,7 @@ output:
 
 # Files analyzed  
 
-The present document has the finality of summarize all possibles analysis that can be done using CIVED/ICCS data set to study the scales regarding Attitudes toward minorities, such as **Attitudes toward equal rights for all ethnic/racial groups**, **Attitudes toward gender equality** and **Attitudes toward equal rights for immigrants**. Three cycles are available and multiple countries participate in each one of them.
+The present document has the finality of summarize some of the analysis that can be done using CIVED/ICCS data set to study the scales regarding Attitudes toward diverse social groups, such as **Attitudes toward equal rights for all ethnic/racial groups**, **Attitudes toward gender equality** and **Attitudes toward equal rights for immigrants**. Three cycles are available and multiple countries participate in each one of them.
 
 This summary include the following selected countries and years (cycle) in the analysis.  
 
@@ -62,13 +62,13 @@ years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% dplyr::sele
 
 ```{r namesfiles, comment=""}
 filenames <- NULL
-cat("Countries selected and year participation in CIVED/ICCS:")
+cat("Countries selected and year participation in CIVED/ICCS:  \n")
 
 for (cnt in CNT) {
 
   yearf <- years %>% filter(AlphaCode == cnt & year != 22) %>% arrange(as.numeric(year))
   
-  cat(paste0(unique(yearf$Country), " :", paste(sort(ifelse(yearf$year == "99", paste0("19",yearf$year), paste0("20",yearf$year))), collapse = " ")))
+  cat(paste0(unique(yearf$Country), " : ", paste(sort(ifelse(yearf$year == "99", paste0("19",yearf$year), paste0("20",yearf$year))), collapse = " ")),'  \n')
 
   for (yearn in yearf$year) {
  
@@ -452,7 +452,10 @@ ICG <- ICGC1 %>%
 
 ```
 
-**Weights and sample size** of each cycle, **n\*** corresponds to the sample size, **w\*** to the total weight and **w\*s** the senate weight.  
+**Weights and sample size**  
+
+The number of observations available for each cycle is in the following tables for each questionnaire, Student, Teacher and School.
+*n\** corresponds to the effective sample size, *w\** to the total weight and *w\*s* the senate weight (sum up 1000 for each country).  
 
 ```{r Saveddata, results='asis'}
 #save(VarsToUse, ISC, ITG, ICG, file = "Data_analysis/ICCSAll.RData")
@@ -529,7 +532,7 @@ ICG %>% dplyr::select(TOTWGT_Cc1,SENWGT_Cc1, COUNTRY, cycle, questC) %>%
 
 # Description of variables  {.tabset .tabset-fade .tabset-pills}
 
-In this section variables available in each data set regarding the constructs of interest are described. Barplots are drawn by country using their respective weights. The frequencies are differentiated by Gender and by the Total sample.    
+In this section items available in each data set regarding the constructs of interest are described. Barplots are drawn by country using their respective weights. The frequencies are differentiated by Gender and Total sample.    
 The indexed of each respective scale are also plotted in a violin diagram, orderer by the weighted mean of each country. The boxplot of the distribution of the data is also included. Dotted line represent the weighted mean for each subgroup and Total.  
 Each cycle can be seen in each tab in this section.
  
@@ -542,10 +545,10 @@ source("Data_analysis/Descriptive_Analysis.R")
 
 # Confirmatory Factor Analysis (CFA)  {.tabset .tabset-fade .tabset-pills}
 
-In this section, a confirmatory factor analysis for the three scales analysed is performed, using weights and complexity of the sample was taken into account. Invariance analysis was also performed to Gender groups and Country groups.  
-Each cycle can be seen in each tab in this section. Finally, last tab show the scores obtained by each model, which are saved and used in the following sections.  
+In this section, a confirmatory factor analysis for the three scales analysed is performed, using weights and complexity of the sample was taken into account. Invariance analysis was also performed to Gender groups and Country groups. The loading od each country in the specific scale are plot with their respective confidence interval.    
+Each cycle can be seen in each tab in this section. Finally, last tab show the scores obtained by each model, which are saved and used in the following sections. Latin American countries questionnaires did not include Immigration scale in 2016, the model for this countries only include remaining two scales.  
 
-```{r cfa, fig.height = 9, fig.width = 9, results = 'asis'}
+```{r cfa, fig.height = 11, fig.width = 9, results = 'asis'}
 
 source("Data_analysis/cfa.R")
 
@@ -555,7 +558,23 @@ source("Data_analysis/cfa.R")
 
 In this section a multilevel model was performed to evaluate the variability of the scale considering the nested structure of the data. The first model use the three cycles of CIVED/ICCS as a level, followed by Country level and finally School level.
 Next, The analysis is performed to all countries participating in each cycle separately, using country and school level. 
-Results are obtained for the models indicated using Null model followed by the model with some explanatory variables at the student level.  
+Results are obtained for the models indicated using Null model followed by the model with some explanatory variables at the student level. 
+
+Dependant variables:  
+
+Ethn_Equal: Attitudes toward equal rights for all ethnic or racial groups calculated by CFA (min = 0, max = 100)   
+Gend_Equal: Attitudes toward gender equality calculated by CFA  (min = 0, max = 100) 
+Immi_Equal: Attitudes toward equal rights for immigrants calculated by CFA (min = 0, max = 100) 
+
+Explanatory variables:  
+
+T_AGE: Age of the student   
+T_GENDER: Gender of the student [0 = Boy(ref), 1 = Girl]   
+T_RELIG: Student's religious affiliation [0 = No Religion(ref), 1 = Religion]    
+T_HOMELIT: Home literacy resources [0 = 0-10 books(ref), 1 = 11-25 books, 2 = 26-100 books, 3 = 101-200 books, 4 = More than 200 books]  
+T_HISEI: Highest parental occupational status (min = 0, max = 100)   
+T_NISB: National index of socioeconomic background  (min = 0, max = 100)
+
 
 ```{r mlm, fig.height = 9, fig.width = 7, results = 'asis'}
 
@@ -603,7 +622,7 @@ b31
 
 Under construction...
 
-```{r}
+```{r lca, results = 'asis'}
 
 cat('\n')
 cat('\n')

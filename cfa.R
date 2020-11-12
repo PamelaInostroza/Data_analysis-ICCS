@@ -305,9 +305,11 @@ if (any(grepl("16", years$year))){
   modelLA16<-'
     Gend_Equal =~ IS3G24A + IS3G24B + IS3G24C_r + IS3G24D_r + IS3G24E + IS3G24F_r
     Ethn_Equal =~ IS3G25A + IS3G25B + IS3G25C + IS3G25D + IS3G25E
-    IS3G24A ~~ IS3G24B
-    IS3G25A ~~ IS3G25B
+    IS3G24D_r ~~ IS3G24F_r
+    IS3G24C_r ~~ IS3G24D_r
+    IS3G24C_r ~~ IS3G24F_r
   '
+
   #############2016#########
   cat('## ICCS 2016  \n')
   cat('  \n')
@@ -315,13 +317,22 @@ if (any(grepl("16", years$year))){
   ds161 <- ISC %>% filter(!is.na(TOTWGT_Gc3)) %>% dplyr::select(all_of(index16), IDSTUD, IDSCHOOL, SENWGT_Gc3, COUNTRY, S_GENDER) %>% 
     mutate(S_GENDER = as.character(S_GENDER)) 
   ds16 <- ds161 %>% mutate_at(.funs = as.numeric, .vars = index16) 
-  survey.design16 <- svydesign(ids=~IDSCHOOL, weights=~SENWGT_Gc3, data=ds16)
   
-  cfa16 <- cfa(model16, data = ds16, cluster = "IDSCHOOL", missing = "fiml")
-  survey.fit16 <- lavaan.survey(lavaan.fit = cfa16, survey.design = survey.design16, estimator= "MLMVS")
-  #print(modindices(survey.fit16,sort=T)[1:10,])
-  p16 <- cbind(ds16, predict(cfa16))
-  p16 <- p16 %>% mutate(cycle = "C3") %>% dplyr::select(cycle, IDSTUD, IDSCHOOL, COUNTRY,Gend_Equal, Immi_Equal, Ethn_Equal)
+  ds16E <- ds16 %>% filter(!COUNTRY %in% c("CHL", "COL", "PER", "DOM", "MEX"))
+  survey.design16E <- svydesign(ids=~IDSCHOOL, weights=~SENWGT_Gc3, data=ds16E)
+  cfa16E <- cfa(model16, data = ds16E, cluster = "IDSCHOOL", missing = "fiml")
+  survey.fit16E <- lavaan.survey(lavaan.fit = cfa16E, survey.design = survey.design16E, estimator= "MLMVS")
+  #print(modindices(survey.fit16E,sort=T)[1:10,])
+  
+  ds16LA <- ds16 %>% filter(COUNTRY %in% c("CHL", "COL", "PER", "DOM", "MEX"))
+  survey.design16LA <- svydesign(ids=~IDSCHOOL, weights=~SENWGT_Gc3, data=ds16LA)
+  cfa16LA <- cfa(modelLA16, data = ds16LA, cluster = "IDSCHOOL", missing = "fiml")
+  survey.fit16LA <- lavaan.survey(lavaan.fit = cfa16LA, survey.design = survey.design16LA, estimator= "MLMVS")
+  #print(modindices(survey.fit16LA,sort=T)[1:10,])
+  
+  p16E <- cbind(ds16E, predict(cfa16E))
+  p16LA <- cbind(ds16LA, predict(cfa16LA))
+  p16 <- p16E %>% bind_rows(p16LA) %>% mutate(cycle = "C3") %>% dplyr::select(cycle, IDSTUD, IDSCHOOL, COUNTRY,Gend_Equal, Immi_Equal, Ethn_Equal)
   
   cnt16 <- unique(ds16$COUNTRY)
   meast16 <- NULL
@@ -357,9 +368,13 @@ if (any(grepl("16", years$year))){
   cat('### CFA - ICCS 2016, all countries')
   cat('  \n')
   cat('  \n')
-  meas16 <- fitMeasures(survey.fit16, c("chisq","df","cfi", "tli","rmsea", "srmr"), 
-                        output = "matrix")
-  knitr::kable(cbind(n = nobs(survey.fit16), round(as.data.frame(t(meas16)), 3))) %>% print() 
+  tmeasE <- t(fitMeasures(survey.fit16E, c("chisq","df","cfi", "tli","rmsea", "srmr"), 
+              output = "matrix"))
+  tmeasLA <- t(fitMeasures(survey.fit16LA, c("chisq","df","cfi", "tli","rmsea", "srmr"), 
+                         output = "matrix"))
+  meas16 <- rbind(data.frame(Quest = "Europe", n = nobs(survey.fit16E), round(tmeasE, 3)),
+                  data.frame(Quest = "Latam", n = nobs(survey.fit16LA), round(tmeasLA, 3)))
+  knitr::kable(meas16) %>% print() 
   
   cat('  \n')
   cat('### CFA - ICCS 2016, by countries')
@@ -368,9 +383,14 @@ if (any(grepl("16", years$year))){
   cat('  \n')
   cat('  \n')
   #print(modindices(survey.fit16,sort=T)[1:10,])
-  invisible(semPaths(survey.fit16,"model", "std", "lisrel", edge.label.cex = 0.5, intercepts = FALSE, groups = "latent", 
+  invisible(semPaths(survey.fit16E,"model", "std", "lisrel", edge.label.cex = 0.5, intercepts = FALSE, groups = "latent", 
                      pastel = TRUE, title = FALSE, optimizeLatRes = TRUE, nCharNodes = 10))
-  title("CFA measurement model", line = 2)
+  title("CFA measurement model Europe", line = 2)
+  cat('  \n')
+  cat('  \n')
+  invisible(semPaths(survey.fit16LA,"model", "std", "lisrel", edge.label.cex = 0.5, intercepts = FALSE, groups = "latent", 
+                     pastel = TRUE, title = FALSE, optimizeLatRes = TRUE, nCharNodes = 10))
+  title("CFA measurement model Latin America", line = 2)
   cat('  \n')
   cat('  \n')
   
@@ -397,15 +417,14 @@ if (any(grepl("16", years$year))){
   cat('  \n')
   cat('  \n')
   
-  ds16LA <- ds16 %>% filter(COUNTRY %in% c("CHL", "COL", "PER", "DOM", "MEX"))
   inv.conf16 <- cfa(modelLA16, data = ds16LA, cluster = "IDSCHOOL", group = "COUNTRY", missing = "fiml")
-  inv.conf16 <- lavaan.survey(lavaan.fit = inv.conf16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.conf16 <- lavaan.survey(lavaan.fit = inv.conf16, survey.design = survey.design16LA, estimator= "MLMVS")
   inv.metr16 <- cfa(modelLA16, data = ds16LA, cluster = "IDSCHOOL", group = "COUNTRY", group.equal = c("loadings"))#, missing = "fiml")
-  inv.metr16 <- lavaan.survey(lavaan.fit = inv.metr16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.metr16 <- lavaan.survey(lavaan.fit = inv.metr16, survey.design = survey.design16LA, estimator= "MLMVS")
   inv.scal16 <- cfa(modelLA16, data = ds16LA, cluster = "IDSCHOOL", group = "COUNTRY", group.equal = c("loadings","intercepts"))#, missing = "fiml")
-  inv.scal16 <- lavaan.survey(lavaan.fit = inv.scal16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.scal16 <- lavaan.survey(lavaan.fit = inv.scal16, survey.design = survey.design16LA, estimator= "MLMVS")
   inv.stri16 <- cfa(modelLA16, data = ds16LA, cluster = "IDSCHOOL", group = "COUNTRY", group.equal = c("loadings","intercepts","lv.variances"))#, missing = "fiml")
-  inv.stri16 <- lavaan.survey(lavaan.fit = inv.stri16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.stri16 <- lavaan.survey(lavaan.fit = inv.stri16, survey.design = survey.design16LA, estimator= "MLMVS")
   invarCNT2 <- data.frame(Quest = "Latam", round(rbind(Configural = fitMeasures(inv.conf16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                      Metric = fitMeasures(inv.metr16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                      Scalar = fitMeasures(inv.scal16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
@@ -413,23 +432,26 @@ if (any(grepl("16", years$year))){
   
   ds16E <- ds16 %>% filter(!COUNTRY %in%  c("CHL", "COL", "PER", "DOM", "MEX"))
   inv.conf16 <- cfa(model16, data = ds16E, cluster = "IDSCHOOL", group = "COUNTRY", missing = "fiml")
-  inv.conf16 <- lavaan.survey(lavaan.fit = inv.conf16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.conf16 <- lavaan.survey(lavaan.fit = inv.conf16, survey.design = survey.design16E, estimator= "MLMVS")
   inv.metr16 <- cfa(model16, data = ds16E, cluster = "IDSCHOOL", group = "COUNTRY", group.equal = c("loadings"))#, missing = "fiml")
-  inv.metr16 <- lavaan.survey(lavaan.fit = inv.metr16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.metr16 <- lavaan.survey(lavaan.fit = inv.metr16, survey.design = survey.design16E, estimator= "MLMVS")
   inv.scal16 <- cfa(model16, data = ds16E, cluster = "IDSCHOOL", group = "COUNTRY", group.equal = c("loadings","intercepts"))#, missing = "fiml")
-  inv.scal16 <- lavaan.survey(lavaan.fit = inv.scal16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.scal16 <- lavaan.survey(lavaan.fit = inv.scal16, survey.design = survey.design16E, estimator= "MLMVS")
   inv.stri16 <- cfa(model16, data = ds16E, cluster = "IDSCHOOL", group = "COUNTRY", group.equal = c("loadings","intercepts","lv.variances"))#, missing = "fiml")
-  inv.stri16 <- lavaan.survey(lavaan.fit = inv.stri16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.stri16 <- lavaan.survey(lavaan.fit = inv.stri16, survey.design = survey.design16E, estimator= "MLMVS")
   invarCNT1 <- data.frame(Quest = "Europe", round(rbind(Configural = fitMeasures(inv.conf16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                      Metric = fitMeasures(inv.metr16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                      Scalar = fitMeasures(inv.scal16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                      Strict = fitMeasures(inv.stri16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea"))),3))
 
   invarCNT <- invarCNT1 %>% mutate(Invariance = rownames(invarCNT1))  %>% relocate(Invariance, .before = npar) %>% 
-    bind_rows(invarCNT2 %>% mutate(Invariance = rownames(invarCNT2))  %>% relocate(Invariance, .before = npar)) %>% 
     mutate(D_tli = tli-lag(tli),
            D_cfi = cfi-lag(cfi),
            D_rmsea = rmsea-lag(rmsea)) %>% 
+    bind_rows(invarCNT2 %>% mutate(Invariance = rownames(invarCNT2))  %>% relocate(Invariance, .before = npar) %>% 
+    mutate(D_tli = tli-lag(tli),
+           D_cfi = cfi-lag(cfi),
+           D_rmsea = rmsea-lag(rmsea))) %>% 
     knitr::kable() %>% print()
   cat('  \n')
   cat('  \n')
@@ -437,13 +459,13 @@ if (any(grepl("16", years$year))){
   cat('  \n')
   cat('  \n')
   inv.conf16 <- cfa(modelLA16, data = ds16LA, cluster = "IDSCHOOL", group = "S_GENDER", missing = "fiml")
-  inv.conf16 <- lavaan.survey(lavaan.fit = inv.conf16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.conf16 <- lavaan.survey(lavaan.fit = inv.conf16, survey.design = survey.design16LA, estimator= "MLMVS")
   inv.metr16 <- cfa(modelLA16, data = ds16LA, cluster = "IDSCHOOL", group = "S_GENDER", group.equal = c("loadings"))#, missing = "fiml")
-  inv.metr16 <- lavaan.survey(lavaan.fit = inv.metr16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.metr16 <- lavaan.survey(lavaan.fit = inv.metr16, survey.design = survey.design16LA, estimator= "MLMVS")
   inv.scal16 <- cfa(modelLA16, data = ds16LA, cluster = "IDSCHOOL", group = "S_GENDER", group.equal = c("loadings","intercepts"))#, missing = "fiml")
-  inv.scal16 <- lavaan.survey(lavaan.fit = inv.scal16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.scal16 <- lavaan.survey(lavaan.fit = inv.scal16, survey.design = survey.design16LA, estimator= "MLMVS")
   inv.stri16 <- cfa(modelLA16, data = ds16LA, cluster = "IDSCHOOL", group = "S_GENDER", group.equal = c("loadings","intercepts","lv.variances"))#, missing = "fiml")
-  inv.stri16 <- lavaan.survey(lavaan.fit = inv.stri16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.stri16 <- lavaan.survey(lavaan.fit = inv.stri16, survey.design = survey.design16LA, estimator= "MLMVS")
   
   invarGNDR2 <- data.frame(Quest = "Latam",round(rbind(Configural = fitMeasures(inv.conf16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                       Metric = fitMeasures(inv.metr16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
@@ -451,23 +473,26 @@ if (any(grepl("16", years$year))){
                                       Strict = fitMeasures(inv.stri16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea"))),3))
   
   inv.conf16 <- cfa(model16, data = ds16E, cluster = "IDSCHOOL", group = "S_GENDER", missing = "fiml")
-  inv.conf16 <- lavaan.survey(lavaan.fit = inv.conf16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.conf16 <- lavaan.survey(lavaan.fit = inv.conf16, survey.design = survey.design16E, estimator= "MLMVS")
   inv.metr16 <- cfa(model16, data = ds16E, cluster = "IDSCHOOL", group = "S_GENDER", group.equal = c("loadings"))#, missing = "fiml")
-  inv.metr16 <- lavaan.survey(lavaan.fit = inv.metr16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.metr16 <- lavaan.survey(lavaan.fit = inv.metr16, survey.design = survey.design16E, estimator= "MLMVS")
   inv.scal16 <- cfa(model16, data = ds16E, cluster = "IDSCHOOL", group = "S_GENDER", group.equal = c("loadings","intercepts"))#, missing = "fiml")
-  inv.scal16 <- lavaan.survey(lavaan.fit = inv.scal16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.scal16 <- lavaan.survey(lavaan.fit = inv.scal16, survey.design = survey.design16E, estimator= "MLMVS")
   inv.stri16 <- cfa(model16, data = ds16E, cluster = "IDSCHOOL", group = "S_GENDER", group.equal = c("loadings","intercepts","lv.variances"))#, missing = "fiml")
-  inv.stri16 <- lavaan.survey(lavaan.fit = inv.stri16, survey.design = survey.design16, estimator= "MLMVS")
+  inv.stri16 <- lavaan.survey(lavaan.fit = inv.stri16, survey.design = survey.design16E, estimator= "MLMVS")
   
   invarGNDR1 <- data.frame(Quest = "Europe", round(rbind(Configural = fitMeasures(inv.conf16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                   Metric = fitMeasures(inv.metr16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                   Scalar = fitMeasures(inv.scal16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea")),
                                   Strict = fitMeasures(inv.stri16, c("npar", "logl","chisq", "df", "tli", "cfi", "rmsea"))),3))
   invarGNDR <- invarGNDR1 %>% mutate(Invariance = rownames(invarGNDR1)) %>% relocate(Invariance, .before = npar) %>% 
-    bind_rows(invarGNDR2 %>% mutate(Invariance = rownames(invarGNDR2)) %>% relocate(Invariance, .before = npar)) %>% 
     mutate(D_tli = tli-lag(tli),
            D_cfi = cfi-lag(cfi),
            D_rmsea = rmsea-lag(rmsea)) %>% 
+    bind_rows(invarGNDR2 %>% mutate(Invariance = rownames(invarGNDR2)) %>% relocate(Invariance, .before = npar) %>% 
+    mutate(D_tli = tli-lag(tli),
+           D_cfi = cfi-lag(cfi),
+           D_rmsea = rmsea-lag(rmsea))) %>% 
     knitr::kable() %>% print()
   cat('  \n')
   cat('  \n')
@@ -481,7 +506,7 @@ cat('  \n')
 
 pall <- rbind(p99, p09, p16)
 ISC_lv <- left_join(ISC, pall, by = c("cycle", "COUNTRY", "IDSCHOOL", "IDSTUD"))
-#save(ISC_lv, file = "Data_analysis/ICCSAll_lv.RData")
+save(ISC_lv, file = "Data_analysis/ICCSAll_lv.RData")
 
 mg <- ISC_lv %>% dplyr::select(cycle, Gend_Equal, Immi_Equal, Ethn_Equal) %>% group_by(cycle) %>% 
   summarise_at(c("Ethn_Equal","Gend_Equal", "Immi_Equal"), list(~ mean(., na.rm = TRUE))) %>% mutate(cycle = as.factor(cycle)) %>% data.frame()

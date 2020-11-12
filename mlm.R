@@ -4,14 +4,29 @@ library(sjPlot)
 setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/Data_analysis")
 
 #Recodification and standardization of variables 
-by(ISC_lv[,c("Ethn_Equal", "Gend_Equal", "Immi_Equal","HOMELIT", "SHOMELIT", "S_HOMLIT", "S_HISCED", "HISEI", "S_NISB", "NISB")], 
-   ISC_lv[,"COUNTRY"],summary)
+# by(ISC_lv[,c("Ethn_Equal", "Gend_Equal", "Immi_Equal", "S_HISCED", "HISEI", "S_NISB", "NISB")], 
+#    ISC_lv[,"COUNTRY"],summary)
 
-indexquest <- sapply(ISC_lv[,c("Ethn_Equal", "Gend_Equal", "Immi_Equal","HOMELIT", "SHOMELIT", "S_HOMLIT", "S_HISCED", "HISEI", "S_NISB", "NISB")], 
+indexquest <- sapply(ISC_lv[,c("Ethn_Equal", "Gend_Equal", "Immi_Equal", "S_HISCED", "HISEI", "S_NISB", "NISB")], 
                      function(x) (x-min(x, na.rm = TRUE))/(max(x, na.rm = TRUE)-min(x, na.rm = TRUE))*100 ) #indicator (min 0 - max 100)
 for (fs in colnames(indexquest)) {
   ISC_lv[, fs] <- indexquest[ , fs]
 }
+
+# table(ISC_lv$HOMELIT)
+# table(ISC_lv$SHOMELIT)
+# table(ISC_lv$S_HOMLIT)
+#Homogeneization of categories of Home literacy
+ISC_lv$HOMELITr <- factor(ifelse(ISC_lv$HOMELIT == 1, 0,
+                                 ifelse(ISC_lv$HOMELIT == 2, 1,
+                                        ifelse(ISC_lv$HOMELIT == 3, 2,
+                                               ifelse(ISC_lv$HOMELIT == 4, 3,
+                                                      ifelse(ISC_lv$HOMELIT == 5, 4, NA))))), level = c(0,1,2,3,4), 
+                          labels = c("0-10 books", "11-50 books", "51-100 books", "101-200 books", "More than 200 books"))
+ISC_lv$SHOMELITr <- factor(ifelse(ISC_lv$SHOMELIT == 5, 4, ISC_lv$SHOMELIT), levels = c(0,1,2,3,4), 
+                           labels = c("0-10 books", "11-25 books", "26-100 books", "101-200 books", "More than 200 books"))
+ISC_lv$S_HOMLITr <- factor(ISC_lv$S_HOMLIT, levels = c(0,1,2,3,4), 
+                           labels = c("0-10 books", "11-25 books", "26-100 books", "101-200 books", "More than 200 books"))
 
 #Unify equal variables through cycles
 ISC_lv <- ISC_lv %>%  group_by(cycle) %>% 
@@ -107,44 +122,44 @@ ds_ml1 <- ISC_lv %>%
   dplyr::select(cycle, COUNTRY, IDSCHOOL, SENWGT, Ethn_Equal, Gend_Equal, Immi_Equal,
                 T_AGE, T_GENDER, T_HOMELIT, T_RELIG, T_HISEI, T_NISB) # %>% na.omit() #, T_HOMELIT, T_RELIG, T_HISEI, T_NISB)
 
-mM1Ethn <- lmer(Ethn_Equal ~ T_AGE + T_GENDER + T_HOMELIT +
+mM1Ethn <- lmer(Ethn_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
                     (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL),
                   data=ds_ml1, weights=SENWGT, REML=FALSE)
-mM1Gndr <- lmer(Gend_Equal ~ T_AGE + T_GENDER + T_HOMELIT +
+mM1Gndr <- lmer(Gend_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
                     (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL),
                   data=ds_ml1, weights=SENWGT, REML=FALSE)
-mM1Immi <- lmer(Immi_Equal ~ T_AGE + T_GENDER + T_HOMELIT +
+mM1Immi <- lmer(Immi_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
                     (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL),
                   data=ds_ml1, weights=SENWGT, REML=FALSE)
 t5 <- tab_model(mM1Ethn, mM1Gndr, mM1Immi)
 
-modelM1EthnC1 <- lmer(Ethn_Equal ~ T_AGE + T_GENDER + T_HOMELIT +
+modelM1EthnC1 <- lmer(Ethn_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                         data=ds_ml1[ds_ml1$cycle == "C1",], weights=SENWGT,  REML=FALSE)
-modelM1GndrC1 <- lmer(Gend_Equal ~ T_AGE + T_GENDER + T_HOMELIT +
+modelM1GndrC1 <- lmer(Gend_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                         data=ds_ml1[ds_ml1$cycle == "C1",], weights=SENWGT,  REML=FALSE)
-modelM1ImmiC1 <- lmer(Immi_Equal ~ T_AGE + T_GENDER + T_HOMELIT +
+modelM1ImmiC1 <- lmer(Immi_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                         data=ds_ml1[ds_ml1$cycle == "C1",], weights=SENWGT,  REML=FALSE)
 
-modelM1EthnC2 <- lmer(Ethn_Equal ~ T_AGE + T_GENDER + T_HOMELIT + T_RELIG + T_HISEI + T_NISB +
+modelM1EthnC2 <- lmer(Ethn_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                         data=ds_ml1[ds_ml1$cycle == "C2",], weights=SENWGT,  REML=FALSE)
-modelM1GndrC2 <- lmer(Gend_Equal ~ T_AGE + T_GENDER + T_HOMELIT + T_RELIG + T_HISEI + T_NISB +
+modelM1GndrC2 <- lmer(Gend_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                         data=ds_ml1[ds_ml1$cycle == "C2",], weights=SENWGT,  REML=FALSE)
-modelM1ImmiC2 <- lmer(Immi_Equal ~ T_AGE + T_GENDER + T_HOMELIT + T_RELIG + T_HISEI + T_NISB +
+modelM1ImmiC2 <- lmer(Immi_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                         data=ds_ml1[ds_ml1$cycle == "C2",], weights=SENWGT,  REML=FALSE)
 
-modelM1EthnC3 <- lmer(Ethn_Equal ~ T_AGE + T_GENDER + T_HOMELIT + T_RELIG + T_HISEI + T_NISB +
+modelM1EthnC3 <- lmer(Ethn_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                         data=ds_ml1[ds_ml1$cycle == "C3",], weights=SENWGT,  REML=FALSE)
-modelM1GndrC3 <- lmer(Gend_Equal ~ T_AGE + T_GENDER + T_HOMELIT + T_RELIG + T_HISEI + T_NISB +
+modelM1GndrC3 <- lmer(Gend_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                         data=ds_ml1[ds_ml1$cycle == "C3",], weights=SENWGT,  REML=FALSE)
-modelM1ImmiC3 <- lmer(Immi_Equal ~ T_AGE + T_GENDER + T_HOMELIT + T_RELIG + T_HISEI + T_NISB +
+modelM1ImmiC3 <- lmer(Immi_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
                         data=ds_ml1[ds_ml1$cycle == "C3",], weights=SENWGT,  REML=FALSE)
 
@@ -154,4 +169,56 @@ b21 <- tab_model(modelM1GndrC1, modelM1GndrC2, modelM1GndrC3, dv.labels = c("CIV
                 title = "Attitudes toward gender equality")
 b31 <- tab_model(modelM1ImmiC1, modelM1ImmiC2, modelM1ImmiC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
                 title = "Attitudes toward equal rights for immigrants ")
-
+# 
+# ########Model 2 ###############
+# ds_ml2 <- ISC_lv %>%
+#   dplyr::select(cycle, COUNTRY, IDSCHOOL, SENWGT, Ethn_Equal, Gend_Equal, Immi_Equal,
+#                 T_AGE, T_GENDER, T_HOMELIT, T_RELIG, T_HISEI, T_NISB) 
+# 
+# mM1Ethn <- lmer(Ethn_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
+#                   (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL),
+#                 data=ds_ml2, weights=SENWGT, REML=FALSE)
+# mM1Gndr <- lmer(Gend_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
+#                   (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL),
+#                 data=ds_ml2, weights=SENWGT, REML=FALSE)
+# mM1Immi <- lmer(Immi_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
+#                   (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL),
+#                 data=ds_ml2, weights=SENWGT, REML=FALSE)
+# t6 <- tab_model(mM1Ethn, mM1Gndr, mM1Immi)
+# 
+# modelM2EthnC1 <- lmer(Ethn_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
+#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
+#                       data=ds_ml2[ds_ml2$cycle == "C1",], weights=SENWGT,  REML=FALSE)
+# modelM2GndrC1 <- lmer(Gend_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
+#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
+#                       data=ds_ml2[ds_ml2$cycle == "C1",], weights=SENWGT,  REML=FALSE)
+# modelM2ImmiC1 <- lmer(Immi_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) +
+#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
+#                       data=ds_ml2[ds_ml2$cycle == "C1",], weights=SENWGT,  REML=FALSE)
+# 
+# modelM2EthnC2 <- lmer(Ethn_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
+#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
+#                       data=ds_ml2[ds_ml2$cycle == "C2",], weights=SENWGT,  REML=FALSE)
+# modelM2GndrC2 <- lmer(Gend_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
+#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
+#                       data=ds_ml2[ds_ml2$cycle == "C2",], weights=SENWGT,  REML=FALSE)
+# modelM2ImmiC2 <- lmer(Immi_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
+#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
+#                       data=ds_ml2[ds_ml2$cycle == "C2",], weights=SENWGT,  REML=FALSE)
+# 
+# modelM2EthnC3 <- lmer(Ethn_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
+#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
+#                       data=ds_ml2[ds_ml2$cycle == "C3",], weights=SENWGT,  REML=FALSE)
+# modelM2GndrC3 <- lmer(Gend_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
+#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
+#                       data=ds_ml2[ds_ml2$cycle == "C3",], weights=SENWGT,  REML=FALSE)
+# modelM2ImmiC3 <- lmer(Immi_Equal ~ T_AGE + factor(T_GENDER) + factor(T_HOMELIT) + factor(T_RELIG) + T_HISEI + T_NISB +
+#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
+#                       data=ds_ml2[ds_ml2$cycle == "C3",], weights=SENWGT,  REML=FALSE)
+# 
+# b12 <- tab_model(modelM2EthnC1, modelM2EthnC2, modelM2EthnC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
+#                  title = "Attitudes toward equal rights for all ethnic/racial groups")
+# b22 <- tab_model(modelM2GndrC1, modelM2GndrC2, modelM2GndrC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
+#                  title = "Attitudes toward gender equality")
+# b32 <- tab_model(modelM2ImmiC1, modelM2ImmiC2, modelM2ImmiC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
+#                  title = "Attitudes toward equal rights for immigrants ")

@@ -1,0 +1,147 @@
+---
+title: "Models using Attitudes toward equality - CIVED 1999/ ICCS 2009/ ICCS 2016"
+author: "Pamela Inostroza Fernández"
+date: "December 2020"
+output: 
+  html_document:
+    keep_md: true
+    toc: TRUE
+    toc_depth: 1
+    toc_float: 
+      collapsed: true
+    number_sections: true
+    theme: united
+    highlight: tango
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+knitr::opts_knit$set(root.dir = 'C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis')
+library(haven)
+library(readxl)
+library(tidyverse)
+options(scipen = 999)
+options(knitr.kable.NA = '')
+
+setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/")
+sys.source("Data_analysis/functions.R", envir = knitr::knit_global())
+
+```  
+
+
+```{r data}
+Countries <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "CNT")
+Files <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "Files")
+Scales <- read_xlsx("Data_analysis/Items scales.xlsx", sheet = "Scales")
+CNTa <- c("DNK", "FIN", "NOR", "SWE")
+CNTb <- c("BFL", "NLD")
+CNTc <- c("BGR", "EST", "LVA", "LTU", "HRV", "SVN")
+CNTd <- c("ITA", "MLT")
+CNTe <- c("CHL", "PER", "COL", "DOM", "MEX")
+CNT <- c(CNTa, CNTb, CNTc, CNTd, CNTe)
+# c(AUS", "BFL", "BGR", "CHE", "CHL", "COL", "CYP", "CZE", "DEU", "DNK", "DOM", "ENG", "ESP", "EST", "FIN", "FRA", "GRC", "HKG", "HRV", "HUN", "ISR", "ITA", "KOR", "LTU", "LVA", "MEX", "MLT", "NLD", "NOR", "PER", "POL", "PRT", "ROM", "RUS", "SRB", "SVK", "SVN", "SWE", "TWN", "USA") CNTb #
+
+years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% dplyr::select(Country, AlphaCode, year) 
+
+```
+
+
+# Multilevel modelling (MLM)  
+
+In this section a multilevel model was performed to evaluate the variability of the scale considering the nested structure of the data. The first model use the three cycles of CIVED/ICCS as a level, followed by Country level and finally School level.
+Next, The analysis is performed to all countries participating in each cycle separately, using country and school level. 
+Results are obtained for the models indicated using Null model followed by the model with some explanatory variables at the student level. 
+
+Dependant variables:  
+
+Ethn_Equal: Attitudes toward equal rights for all ethnic or racial groups calculated by CFA (min = 0, max = 100)   
+Gend_Equal: Attitudes toward gender equality calculated by CFA  (min = 0, max = 100) 
+Immi_Equal: Attitudes toward equal rights for immigrants calculated by CFA (min = 0, max = 100) 
+
+Explanatory variables:  
+
+T_AGE: Age of the student   
+T_GENDER: Gender of the student [0 = Boy(ref), 1 = Girl]   
+T_RELIG: Student's religious affiliation [0 = No Religion(ref), 1 = Religion]    
+T_HOMELIT: Home literacy resources [0 = 0-10 books(ref), 1 = 11-25 books, 2 = 26-100 books, 3 = 101-200 books, 4 = More than 200 books]  
+T_HISEI: Highest parental occupational status (min = 0, max = 100)   
+T_NISB: National index of socioeconomic background  (min = 0, max = 100)
+
+
+```{r mlm, fig.height = 9, fig.width = 7, results = 'asis'}
+
+load("Data_analysis/ICCSAll_lv.RData")
+source("Data_analysis/mlm.R")
+cat('\n')
+cat('\n')
+cat('## Three level model: School nested in countries and in cycles  \n')
+cat('\n')
+cat('\n')
+cat('### Null model  \n')
+t1
+cat('\n')
+cat('\n')
+cat('### Model 1  \n')
+cat('\n')
+cat('\n')
+t5
+cat('\n')
+cat('\n')
+cat('### Model 2  \n')
+cat('\n')
+cat('\n')
+t6
+cat('\n')
+cat('\n')
+cat('## Two level model: School nested in countries by cycles  \n')
+cat('\n')
+cat('\n')
+cat('### Null model  \n')
+cat('\n')
+cat('\n')
+t2
+t3
+t4
+cat('\n')
+cat('\n')
+cat('### Model 1  \n')
+cat('\n')
+cat('\n')
+b11
+b21
+b31
+cat('\n')
+cat('\n')
+cat('### Model 2  \n')
+cat('\n')
+cat('\n')
+b12
+b22
+b32
+```
+
+# Latent Class Analysis  (LCA) {.tabset .tabset-fade .tabset-pills}
+
+Under construction...
+
+```{r lca, results = 'asis'}
+
+cat('\n')
+cat('\n')
+cat('## CIVED 1999')
+cat('\n')
+cat('\n')
+#source("Data_analysis/lca.R")
+cat('\n')
+cat('\n')
+cat('## ICCS 2009')
+cat('\n')
+cat('\n')
+
+cat('\n')
+cat('\n')
+cat('## ICCS 2016')
+cat('\n')
+cat('\n')
+```
+

@@ -1,2 +1,32 @@
-Data_analysis
-published in https://rpubs.com/PameI20/698393
+Data_analysis  Published in https://rpubs.com/PameI20/698393  
+
+ICCS datasets are analysed, in particular scales
+
+Attitudes toward equal rights for all ethnic/racial groups,
+Attitudes toward gender equality and
+Attitudes toward equal rights for immigrants.
+Three cycles of ICCS are considered CIVED 1999/ ICCS 2009/ ICCS 2016.
+
+File 1:
+
+Descriptive Analysis
+1.1 Barplot of categorical variables
+1.2 Violin/boxplot of continuous variables
+Confirmatory Factor Analysis
+2.1 General CFA
+2.2 CFA by country
+2.3 Invariance (MGCFA) for Countries
+2.4 Invariance (MGCFA) for Gender
+2.5 Score generation
+File 2:
+
+Multilevel modelling
+3.1 Three level model
+3.2 Two level model
+Logistic regression
+4.1 ...
+Latent Class Analysis
+4.2 ...
+...
+
+

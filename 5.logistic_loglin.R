@@ -6,13 +6,17 @@ options(survey.lonely.psu="adjust")
 ds_ll0 <- ISC_lvR %>% 
   dplyr::select(all_of(Id), all_of(sampleID), all_of(Scales), all_of(Scalesb), all_of(Man_cate), all_of(Man_cont)) 
 
-Man_cate2 <- Man_cate[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cate)]
-Man_cont2 <- Man_cont[!grepl(paste0(c("T_NISB"), collapse = "|"), Man_cont)]
+Man_cateSignf <- Man_cate[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cate)]
+Man_contSignf <- Man_cont[!grepl(paste0(c("T_CITRESP", "T_NISB", "T_PROTES"), collapse = "|"), Man_cont)]
 
-form <- paste0(paste(Man_cate2, collapse = " + "), " + ", paste(Man_cont2, collapse = " + "))
 
-Man_cateC1 <- Man_cate[!grepl(paste0(c("T_HIGHEDEXP", "T_HIGHEDFA", "T_RELIG", "T_HISCED"), collapse = "|"), Man_cate)]
-Man_contC1 <- Man_cont[!grepl(paste0(c("T_HISEI", "T_NISB", "T_PROTES"), collapse = "|"), Man_cont)]
+#Selection of variables to be used in models for availability
+Man_cateC2C3 <- Man_cateSignf[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cateSignf)]
+Man_contC2C3 <- Man_contSignf[!grepl(paste0(c("T_NISB", "T_CITRESP", "T_PROTES"), collapse = "|"), Man_contSignf)]
+form <- paste0(paste(Man_cateC2C3, collapse = " + "), " + ", paste(Man_contC2C3, collapse = " + "))
+#Special selection for cycle 1 for availability
+Man_cateC1 <- Man_cateSignf[!grepl(paste0(c("T_HIGHEDEXP", "T_RELIG", "T_HISCED", "T_PROTES1"), collapse = "|"), Man_cateSignf)]
+Man_contC1 <- Man_contSignf[!grepl(paste0(c("T_HISEI", "T_NISB", "T_PROTES", "T_CNTATT", "T_ELECPART", "T_LEGACT", "T_WIDEPART", "T_CITRESP"), collapse = "|"), Man_contSignf)]
 formC1 <- paste0(paste(Man_cateC1, collapse = " + "), " + ", paste(Man_contC1, collapse = " + "))
 
 survey.designC1 <- svydesign(ids = ~IDCL, weights = ~SENWGT, data=ds_ll0[ds_ll0$cycle == "C1",], strata = ~IDJK, nest = TRUE)

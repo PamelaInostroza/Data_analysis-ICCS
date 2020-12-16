@@ -52,14 +52,10 @@ years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% dplyr::sele
 
 load(file = "ICCSAll_lv.RData")
 
-Scales <- c(paste0(VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableC1) %>% 
-                     na.omit() %>% pull(),"."),
+Scales0 <- c(VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableC1) %>% na.omit() %>% pull(),
             VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableC2) %>% na.omit() %>% pull(),
             VarsToUse %>%  filter(Domain == "Scales" & Dataset  %in% c("ISG","ISE")) %>% select(VariableC3) %>% na.omit() %>% pull())
 
-Scalesr <-c(ifelse(Scales %in% c("BS4G6.","BS4G9.","BS4G13.","IS2P24C","IS2P24D","IS2P24F","IS3G24C","IS3G24D","IS3G24F"), 
-                   paste0(Scales,"_r"), Scales))
-            
 Indicfa <- c("Gend_Equal", "Immi_Equal", "Ethn_Equal")
 
 Id <- VarsToUse %>%  filter(Construct == "ID Variables" & Dataset == "ISG") %>% select(VariableName) %>% na.omit() %>% pull()
@@ -78,7 +74,7 @@ Man_cont0 <- c(VarsToUse %>%  filter(Domain %in% "Contextual" & Dataset == "ISG"
 
 Scores <- VarsToUse %>%  filter(Construct %in% "Scores" & Dataset == "ISG") %>% select(VariableName) %>% na.omit() %>% pull()
 
-ISC_rec <- ISC_lv %>% select(all_of(Id), all_of(Man_cont0), all_of(Indicfa), all_of(Man_cate0), all_of(Sample), all_of(Scalesr))
+ISC_rec <- ISC_lv %>% select(all_of(Id), all_of(Man_cont0), all_of(Indicfa), all_of(Man_cate0), all_of(Sample), all_of(Scales0))
 source("3.Recod_var_for_modelling.R")
 
 ISC_lvR <- ISC_lv %>% select(-all_of(Sample), -all_of(Man_cate0), -all_of(Man_cont0), -all_of(Indicfa)) %>% 
@@ -117,6 +113,9 @@ $lmer(Dep ~ Indep + (1|COUNTRY) + (1|COUNTRY:IDSCHOOL), data=data, weights=SENWG
 load("ICCSAll_lvR.RData")
 
 Man_cate <- VarsToUse %>%  filter(Domain %in% "Background questionnaires" & Dataset == "ISG") %>% select(VariableName) %>% pull()
+#Filter for variables not yet calculated
+Man_cate <- c(Man_cate[!grepl("*[1-9]$", Man_cate)], Man_cate[grepl("^T_PROTES*", Man_cate)])
+
 Man_cont <- VarsToUse %>%  filter(Domain %in% "Contextual" & Dataset == "ISG") %>% select(VariableName) %>% pull() %>% na.omit()
 sampleID <- c("IDJK", "IDCL")
 
@@ -169,6 +168,7 @@ $svyglm(formula = , design = survey.design, family = poisson, data = data)$.
 ```{r lgn, results = 'asis'}
 Scales <- c(VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableName) %>% na.omit() %>% pull())
 sampleID <- c("IDJK", "IDCL", "SENWGT")
+Scalesb <- paste0("b",c(VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableName) %>% na.omit() %>% pull()))
 
 source("5.logistic_loglin.R")
 

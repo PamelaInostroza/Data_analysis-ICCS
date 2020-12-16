@@ -44,7 +44,7 @@ t3 <- tab_model(L2NullGndrC1, L2NullGndrC2, L2NullGndrC3, dv.labels = c("CIVED 1
                 title = "Attitudes toward gender equality")
 
 t4 <- tab_model(L2NullEthnC1, L2NullEthnC2, L2NullEthnC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
+                collapse.ci = TRUE, p.style = "stars",
                 title = "Attitudes toward equal rights for all ethnic/racial groups")
 
 
@@ -53,7 +53,7 @@ ds_ml1 <- ISC_lvR %>%
   dplyr::select(cycle, COUNTRY, IDSCHOOL, SENWGT, Ethn_Equal, Gend_Equal, Immi_Equal, all_of(Man_cate), all_of(Man_cont)) 
 
 Man_cate2 <- Man_cate[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cate)]
-Man_cont2 <- Man_cont[!grepl(paste0(c("T_NISB"), collapse = "|"), Man_cont)]
+Man_cont2 <- Man_cont[!grepl(paste0(c("T_NISB", "T_CITRESP"), collapse = "|"), Man_cont)]
 
 form <- paste0(paste(Man_cate2, collapse = " + "), " + ", paste(Man_cont2, collapse = " + "))
 
@@ -68,8 +68,8 @@ L3M1Ethn <- lmer(as.formula(paste("Ethn_Equal ~", form, " +
                  data=ds_ml1, weights=SENWGT, REML=FALSE)
 t5 <- tab_model(L3M1Immi, L3M1Gndr, L3M1Ethn, collapse.ci = TRUE, p.style = "stars")
 
-Man_cate3 <- Man_cate2[!grepl(paste0(c("T_HIGHEDEXP", "T_RELIG"), collapse = "|"), Man_cate2)]
-Man_cont3 <- Man_cont2[!grepl(paste0(c("T_HISEI", "T_PROTES"), collapse = "|"), Man_cont2)]
+Man_cate3 <- Man_cate2[!grepl(paste0(c("T_HIGHEDEXP", "T_RELIG", "T_PROTES1"), collapse = "|"), Man_cate2)]
+Man_cont3 <- Man_cont2[!grepl(paste0(c("T_NISB", "T_HISEI", "T_PROTES", "T_CNTATT", "T_ELECPART", "T_LEGACT", "T_WIDEPART", "T_CITRESP"), collapse = "|"), Man_cont2)]
 form1 <- paste0(paste(Man_cate3, collapse = " + "), " + ", paste(Man_cont3, collapse = " + "))
 
 L2M1ImmiC1 <- lmer(as.formula(paste("Immi_Equal ~ ", form1, " +

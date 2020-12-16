@@ -1,68 +1,58 @@
 library(lavaan)
 library(lavaan.survey)
 library(semPlot)
-options(survey.lonely.psu="adjust", survey.missing = "fiml")
+library(sjlabelled)
 
-#Cycle 1 vars reverse whole scale
+options(survey.lonely.psu="adjust")
+
+InverseCod <- c("BS4G6","BS4G9","BS4G13","IS2P24C","IS2P24D","IS2P24F","IS3G24C","IS3G24D","IS3G24F")
+#Cycles 2-3 vars reverse whole scale
 C1vars <- VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableC1) %>% na.omit() %>% pull()
-datc1 <- data.frame(psych::reverse.code(keys = rep(-1,length(C1vars)), 
-                                        items = ISC_cfa[,C1vars], 
-                                        mini = rep(1,length(C1vars)), 
-                                        maxi = rep(4,length(C1vars))))
-datc1 <- sjlabelled::set_labels(datc1, labels = c("strongly agree" = 1, "agree" = 2, "disagree" = 3, "strongly disagree" = 4))
-datc1$BS4G1. <- sjlabelled::set_label(datc1$BS4G1., sjlabelled::get_label(ISC_cfa$BS4G1))
-datc1$BS4G4. <- sjlabelled::set_label(datc1$BS4G4., sjlabelled::get_label(ISC_cfa$BS4G4))
-datc1$BS4G11. <- sjlabelled::set_label(datc1$BS4G11., sjlabelled::get_label(ISC_cfa$BS4G11))
-datc1$BS4G2. <- sjlabelled::set_label(datc1$BS4G2., sjlabelled::get_label(ISC_cfa$BS4G2))
-datc1$BS4G5. <- sjlabelled::set_label(datc1$BS4G5., sjlabelled::get_label(ISC_cfa$BS4G5))
-datc1$BS4G8. <- sjlabelled::set_label(datc1$BS4G8., sjlabelled::get_label(ISC_cfa$BS4G8))
-datc1$BS4G12. <- sjlabelled::set_label(datc1$BS4G12., sjlabelled::get_label(ISC_cfa$BS4G12))
-datc1$BS4H1. <- sjlabelled::set_label(datc1$BS4H1., sjlabelled::get_label(ISC_cfa$BS4H1))
-datc1$BS4H2. <- sjlabelled::set_label(datc1$BS4H2., sjlabelled::get_label(ISC_cfa$BS4H2))
-datc1$BS4H3. <- sjlabelled::set_label(datc1$BS4H3., sjlabelled::get_label(ISC_cfa$BS4H3))
-datc1$BS4H4. <- sjlabelled::set_label(datc1$BS4H4., sjlabelled::get_label(ISC_cfa$BS4H4))
-datc1$BS4H5. <- sjlabelled::set_label(datc1$BS4H5., sjlabelled::get_label(ISC_cfa$BS4H5))
-ISC_cfa <- cbind(ISC_cfa, datc1)
+C1vars <- C1vars[grepl(paste0(InverseCod, collapse = "|"), C1vars)]
+C2vars <- VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableC2) %>% na.omit() %>% pull()
+C2vars <- C2vars[!grepl(paste0(InverseCod, collapse = "|"), C2vars)]
+C3vars <- VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableC3) %>% na.omit() %>% pull()
+C3vars <- C3vars[!grepl(paste0(InverseCod, collapse = "|"), C3vars)]
 
-#vars inverse codificated
-torecod <- c("BS4G6._r","BS4G9._r","BS4G13._r","IS2P24C_r","IS2P24D_r","IS2P24F_r","IS3G24C_r","IS3G24D_r","IS3G24F_r")
-if(!any(colnames(ISC_cfa) %in% torecod)){
-  recod <- c("BS4G6.", "IS2P24C", "IS3G24C", "BS4G9.", "IS2P24D", "IS3G24D","BS4G13.", "IS2P24F", "IS3G24F")
-  dat <- data.frame(psych::reverse.code(keys = rep(-1,length(recod)), 
-                                        items = ISC_cfa[,recod], 
-                                        mini = rep(1,length(recod)), 
-                                        maxi = rep(4,length(recod))))
-  colnames(dat) <- paste(recod,"_r",sep = "")
-  ISC_cfa <- cbind(ISC_cfa, dat)
-  ISC_cfa$BS4G6._r <- sjlabelled::set_label(ISC_cfa$BS4G6._r, paste0(sjlabelled::get_label(ISC_cfa$BS4G6),"(r)"))
-  ISC_cfa$BS4G9._r <- sjlabelled::set_label(ISC_cfa$BS4G9._r, paste0(sjlabelled::get_label(ISC_cfa$BS4G9),"(r)"))
-  ISC_cfa$BS4G13._r <- sjlabelled::set_label(ISC_cfa$BS4G13._r, paste0(sjlabelled::get_label(ISC_cfa$BS4G13),"(r)"))
-  ISC_cfa$IS2P24C_r <- sjlabelled::set_label(ISC_cfa$IS2P24C_r, paste0(sjlabelled::get_label(ISC_cfa$IS2P24C),"(r)"))
-  ISC_cfa$IS2P24D_r <- sjlabelled::set_label(ISC_cfa$IS2P24D_r, paste0(sjlabelled::get_label(ISC_cfa$IS2P24D),"(r)"))
-  ISC_cfa$IS2P24F_r <- sjlabelled::set_label(ISC_cfa$IS2P24F_r, paste0(sjlabelled::get_label(ISC_cfa$IS2P24F),"(r)"))
-  ISC_cfa$IS3G24C_r <- sjlabelled::set_label(ISC_cfa$IS3G24C_r, paste0(sjlabelled::get_label(ISC_cfa$IS3G24C),"(r)"))
-  ISC_cfa$IS3G24D_r <- sjlabelled::set_label(ISC_cfa$IS3G24D_r, paste0(sjlabelled::get_label(ISC_cfa$IS3G24D),"(r)"))
-  ISC_cfa$IS3G24F_r <- sjlabelled::set_label(ISC_cfa$IS3G24F_r, paste0(sjlabelled::get_label(ISC_cfa$IS3G24F),"(r)"))
+torecod <- c(C1vars, C2vars, C3vars)
+if(!any(colnames(ISC_cfa) %in% paste0(c(C1vars, C2vars, C3vars),"."))){
+  dat <- data.frame(psych::reverse.code(keys = rep(-1,length(torecod)), 
+                                        items = ISC_cfa[torecod], 
+                                        mini = rep(1,length(torecod)), 
+                                        maxi = rep(4,length(torecod))))
+  colnames(dat) <- colnames(ISC_cfa[, torecod])
 }
 
+#Copy labels of old variables
+label <- NULL
+for (i in 1:length(torecod)) {
+  label[i] <- eval(parse(text=paste0("get_label(ISC_cfa$",torecod[i],")")))
+}
 
-Scalesr <- Itemdesc %>% 
-  mutate(CIVED_1999 = ifelse(item != "index", ifelse(CIVED_1999 %in% c("BS4G6","BS4G9","BS4G13"), paste0(CIVED_1999,"._r"), 
-                             ifelse(!is.na(CIVED_1999), paste0(CIVED_1999,"."), NA)), CIVED_1999),
-          ICCS_2009 = ifelse(ICCS_2009 %in% c("IS2P24C","IS2P24D","IS2P24F"), paste0(ICCS_2009 ,"_r"), ICCS_2009),
-          ICCS_2016 = ifelse(ICCS_2016 %in% c("IS3G24C","IS3G24D","IS3G24F"), paste0(ICCS_2016 ,"_r"), ICCS_2016)) 
-  
+#Add (r) to label for inverse coded variables
+labelr <- NULL
+for (j in 1:length(InverseCod)) {
+  labelr[j] <- paste0(eval(parse(text=paste0("get_label(ISC_cfa$",InverseCod[j],")"))),"(r)")
+}
+
+ISC_cfa <- cbind(ISC_cfa[,!colnames(ISC_cfa) %in% torecod], dat)
+
+ISC_cfa[torecod] <- set_label(ISC_cfa[torecod], label)
+ISC_cfa[InverseCod] <- set_label(ISC_cfa[InverseCod], labelr)
+ISC_cfa[Scales] <-  set_labels(ISC_cfa[Scales], labels = c("strongly disagree" = 1, "disagree" = 2, "agree" = 3, "strongly agree" = 4))
+
+
 if (any(grepl("99", years$year))){
   model99<-'
-    Gend_Equal =~ BS4G1. + BS4G4. + BS4G6._r + BS4G9._r + BS4G11. + BS4G13._r
-    Immi_Equal =~ BS4H1. + BS4H2. + BS4H3. + BS4H4. + BS4H5.
-    Ethn_Equal =~ BS4G2. + BS4G5. + BS4G8. + BS4G12.
-    BS4H1. ~~  BS4H4.
-    BS4G9._r ~~ BS4G13._r
+    Gend_Equal =~ BS4G1 + BS4G4 + BS4G6 + BS4G9 + BS4G11 + BS4G13
+    Immi_Equal =~ BS4H1 + BS4H2 + BS4H3 + BS4H4 + BS4H5
+    Ethn_Equal =~ BS4G2 + BS4G5 + BS4G8 + BS4G12
+    BS4H1 ~~  BS4H4
+    BS4G9 ~~ BS4G13
     '
   cat('## CIVED 1999  \n')
   #############1999#########
-  index99 <- Scalesr %>% filter(item != "index") %>% dplyr::select(CIVED_1999) %>% na.omit() %>% pull()
+  index99 <- Itemdesc %>% filter(item != "index") %>% dplyr::select(CIVED_1999) %>% na.omit() %>% pull()
 
   ds991 <- ISC_cfa %>% filter(!is.na(TOTWGT_Gc1)) %>% 
     dplyr::select(all_of(index99), all_of(Id), all_of(sampleID), -SENWGT_Gc2, -TOTWGT_Gc2, -SENWGT_Gc3, -TOTWGT_Gc3, GENDER) %>% 
@@ -165,7 +155,7 @@ if (any(grepl("99", years$year))){
     knitr::kable() %>% print()
   cat('  \n')
   cat('  \n')
-
+  
   cat('### Invariance between GENDER')
   cat('  \n')
   cat('  \n')
@@ -189,11 +179,11 @@ if (any(grepl("99", years$year))){
     knitr::kable() %>% print()
   cat('  \n')
   cat('  \n')
-
+  rm(cfa99, survey.fit99, CNTcfa, survey.CNTfit, inv.conf99, inv.metr99, inv.scal99, inv.stri99)
 }
 if (any(grepl("09", years$year))){
   # model09<-'
-  #   Gend_Equal =~ IS2P24A + IS2P24B + IS2P24C_r + IS2P24D_r + IS2P24E + IS2P24F_r
+  #   Gend_Equal =~ IS2P24A + IS2P24B + IS2P24C + IS2P24D + IS2P24E + IS2P24F
   #   Immi_Equal =~ IS2P26A + IS2P26B + IS2P26C + IS2P26D + IS2P26E
   #   Ethn_Equal =~ IS2P25A + IS2P25B + IS2P25C + IS2P25D + IS2P25E
   #   IS2P24A ~~ IS2P24B
@@ -209,7 +199,7 @@ if (any(grepl("09", years$year))){
 
   #############2009#########
   cat('## ICCS 2009  \n')
-  index09 <- Scalesr %>% filter(item != "index") %>% dplyr::select(ICCS_2009) %>% na.omit() %>% pull()
+  index09 <- Itemdesc %>% filter(item != "index") %>% dplyr::select(ICCS_2009) %>% na.omit() %>% pull()
   ds091 <- ISC_cfa %>% filter(!is.na(TOTWGT_Gc2)) %>% 
     dplyr::select(all_of(index09), all_of(Id), all_of(sampleID), SENWGT_Gc2, SGENDER) %>% 
     mutate(SGENDER = as.character(SGENDER)) 
@@ -241,7 +231,7 @@ if (any(grepl("09", years$year))){
   }
   meast09 <- as.data.frame(t(meast09))
   rownames(meast09) <- cnt09
-
+  
   cat('### CFA - ICCS 2009, all countries')
   cat('  \n')
   cat('  \n')
@@ -327,11 +317,12 @@ if (any(grepl("09", years$year))){
   cat('  \n')
   cat('  \n')
 
+  rm(cfa09, survey.fit09, CNTcfa, survey.CNTfit, inv.conf09, inv.metr09, inv.scal09, inv.stri09)
   
 }
 if (any(grepl("16", years$year))){
   model16<-'
-    Gend_Equal =~ IS3G24A + IS3G24B + IS3G24C_r + IS3G24D_r + IS3G24E + IS3G24F_r
+    Gend_Equal =~ IS3G24A + IS3G24B + IS3G24C + IS3G24D + IS3G24E + IS3G24F
     Immi_Equal =~ ES3G04A + ES3G04B + ES3G04C + ES3G04D + ES3G04E
     Ethn_Equal =~ IS3G25A + IS3G25B + IS3G25C + IS3G25D + IS3G25E
     IS3G24A ~~ IS3G24B
@@ -339,17 +330,17 @@ if (any(grepl("16", years$year))){
     ES3G04A ~~ ES3G04D
   '
   modelLA16<-'
-    Gend_Equal =~ IS3G24A + IS3G24B + IS3G24C_r + IS3G24D_r + IS3G24E + IS3G24F_r
+    Gend_Equal =~ IS3G24A + IS3G24B + IS3G24C + IS3G24D + IS3G24E + IS3G24F
     Ethn_Equal =~ IS3G25A + IS3G25B + IS3G25C + IS3G25D + IS3G25E
-    IS3G24D_r ~~ IS3G24F_r
-    IS3G24C_r ~~ IS3G24D_r
-    IS3G24C_r ~~ IS3G24F_r
+    IS3G24D ~~ IS3G24F
+    IS3G24C ~~ IS3G24D
+    IS3G24C ~~ IS3G24F
   '
 
   #############2016#########
   cat('## ICCS 2016  \n')
   cat('  \n')
-  index16 <- Scalesr %>% filter(item != "index") %>% dplyr::select(ICCS_2016) %>% na.omit() %>% pull()
+  index16 <- Itemdesc %>% filter(item != "index") %>% dplyr::select(ICCS_2016) %>% na.omit() %>% pull()
   ds161 <- ISC_cfa %>% filter(!is.na(TOTWGT_Gc3)) %>% 
     dplyr::select(all_of(index16), all_of(Id), all_of(sampleID), SENWGT_Gc3, S_GENDER) %>% 
     mutate(S_GENDER = as.character(S_GENDER)) 
@@ -534,6 +525,7 @@ if (any(grepl("16", years$year))){
     knitr::kable() %>% print()
   cat('  \n')
   cat('  \n')
+  rm(cfa16, survey.fit16, CNTcfa, survey.CNTfit, inv.conf16, inv.metr16, inv.scal16, inv.stri16)
 }
 
 cat('  \n')
@@ -583,4 +575,4 @@ s3 <- ISC_cfa %>% dplyr::select(cycle, COUNTRY, Ethn_Equal) %>% na.omit() %>%
   theme(legend.position = "none")
 print(s3)
 
-ISC_cfa <- ISC_cfa %>% select(all_of(Id), all_of(paste0(C1vars,".")), all_of(torecod), Gend_Equal, Immi_Equal, Ethn_Equal)
+ISC_cfa <- ISC_cfa %>% select(all_of(Id), all_of(Scales), Gend_Equal, Immi_Equal, Ethn_Equal)

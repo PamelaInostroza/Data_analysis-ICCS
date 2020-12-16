@@ -644,7 +644,7 @@ ISC_cfa <- ISC %>% select(all_of(Id), all_of(Scales), all_of(Sample), all_of(sam
 
 source("2.cfa.R")
 
-ISC_lv <- ISC %>% left_join(ISC_cfa, by = all_of(Id))
+ISC_lv <- ISC[,!colnames(ISC) %in% Scales] %>% left_join(ISC_cfa, by = all_of(Id))
 #save(ISC_lv, VarsToUse, file = "ICCSAll_lv.RData")
 rm(ISC_cfa)
 ```

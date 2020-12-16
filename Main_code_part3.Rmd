@@ -1,0 +1,48 @@
+---
+title: "Attitudes toward equality - part 3"
+author: "Pamela Inostroza Fernández"
+date: "December 2020"
+output: 
+  html_document:
+    keep_md: true
+    toc: TRUE
+    toc_depth: 1
+    toc_float: 
+      collapsed: true
+    number_sections: true
+    theme: united
+    highlight: tango
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(tidyverse)
+
+options(scipen = 999)
+options(knitr.kable.NA = '')
+
+#setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/")
+sys.source("0.functions.R", envir = knitr::knit_global())
+
+load("ICCSAll_lvR.RData")
+Id <- VarsToUse %>%  filter(Construct == "ID Variables" & Dataset == "ISG") %>% dplyr::select(VariableName) %>% na.omit() %>% pull()
+Scales <- c(VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% dplyr::select(VariableName) %>% na.omit() %>% pull())
+Scalesb <- paste0("b", c(VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% dplyr::select(VariableName) %>% na.omit() %>% pull()))
+sampleID <- c("IDJK", "IDCL", "SENWGT")
+Man_cate <- VarsToUse %>%  filter(Domain %in% "Background questionnaires" & Dataset == "ISG") %>% dplyr::select(VariableName) %>% pull()
+Man_cont <- VarsToUse %>%  filter(Domain %in% "Contextual" & Dataset == "ISG") %>% dplyr::select(VariableName) %>% pull() %>% na.omit()
+
+```  
+
+# Latent Class Analysis  (LCA) {.tabset .tabset-fade .tabset-pills}
+
+```{r lca, results = 'asis'}
+
+cat('\n')
+cat('\n')
+source("7.lcaR.R")
+cat('\n')
+cat('\n')
+```

@@ -1,0 +1,309 @@
+---
+title: "Attitudes toward equality - part 2"
+author: "Pamela Inostroza Fernandez"
+date: "December 2020"
+output: 
+  html_document:
+    keep_md: true
+    toc: TRUE
+    toc_depth: 1
+    toc_float: 
+      collapsed: true
+    number_sections: true
+    theme: united
+    highlight: tango
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(readxl)
+library(tidyverse)
+library(sjPlot)
+
+options(scipen = 999)
+options(knitr.kable.NA = '')
+
+#setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/")
+```  
+
+# Standardization {.tabset .tabset-fade .tabset-pills}
+
+The standardization of independent continuous variables, the scale was adjusted for each cycle the way that the minimum value was 0 and maximum value was 100.  
+$z = \frac{x - min(x)}{max(x) - min(x)}*100$
+
+For categorical variables, codification of similar categories was performed, maintaining the categories used in the last cycle study in 2016.  
+
+```{r data, fig.height = 8, fig.width = 7, results = 'asis', fig.show='asis'}
+#setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/Data_analysis")
+Countries <- read_xlsx("Metadata.xlsx", sheet = "CNT")
+Files <- read_xlsx("Metadata.xlsx", sheet = "Files")
+Itemdesc <- read_xlsx("Items scales.xlsx", sheet = "Scales")
+CNTa <- c("DNK", "FIN", "NOR", "SWE")
+CNTb <- c("BFL", "NLD")
+CNTc <- c("BGR", "EST", "LVA", "LTU", "HRV", "SVN")
+CNTd <- c("ITA", "MLT")
+CNTe <- c("CHL", "PER", "COL", "DOM", "MEX")
+CNT <- c(CNTa, CNTb, CNTc, CNTd, CNTe)
+# c(AUS", "BFL", "BGR", "CHE", "CHL", "COL", "CYP", "CZE", "DEU", "DNK", "DOM", "ENG", "ESP", "EST", "FIN", "FRA", "GRC", "HKG", "HRV", "HUN", "ISR", "ITA", "KOR", "LTU", "LVA", "MEX", "MLT", "NLD", "NOR", "PER", "POL", "PRT", "ROM", "RUS", "SRB", "SVK", "SVN", "SWE", "TWN", "USA") CNTb #
+
+years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% dplyr::select(Country, AlphaCode, year) 
+
+load(file = "ICCSAll_lv.RData")
+
+Scales <- c(paste0(VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableC1) %>% 
+                     na.omit() %>% pull(),"."),
+            VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableC2) %>% na.omit() %>% pull(),
+            VarsToUse %>%  filter(Domain == "Scales" & Dataset  %in% c("ISG","ISE")) %>% select(VariableC3) %>% na.omit() %>% pull())
+
+Scalesr <-c(ifelse(Scales %in% c("BS4G6.","BS4G9.","BS4G13.","IS2P24C","IS2P24D","IS2P24F","IS3G24C","IS3G24D","IS3G24F"), 
+                   paste0(Scales,"_r"), Scales))
+            
+Indicfa <- c("Gend_Equal", "Immi_Equal", "Ethn_Equal")
+
+Id <- VarsToUse %>%  filter(Construct == "ID Variables" & Dataset == "ISG") %>% select(VariableName) %>% na.omit() %>% pull()
+
+Sample <-  c(VarsToUse %>%  filter(Construct %in% "Weights" & Dataset == "ISG") %>% select(VariableC1) %>% na.omit() %>% pull(),
+             VarsToUse %>%  filter(Construct %in% "Weights" & Dataset == "ISG") %>% select(VariableC2) %>% na.omit() %>% pull(),
+             VarsToUse %>%  filter(Construct %in% "Weights" & Dataset == "ISG") %>% select(VariableC3) %>% na.omit() %>% pull())
+
+Man_cate0 <- c(VarsToUse %>%  filter(Domain %in% "Background questionnaires" & Dataset == "ISG") %>% select(VariableC1) %>% na.omit() %>% pull(),
+              VarsToUse %>%  filter(Domain %in% "Background questionnaires" & Dataset == "ISG") %>% select(VariableC2) %>% na.omit() %>% pull(),
+              VarsToUse %>%  filter(Domain %in% "Background questionnaires" & Dataset == "ISG") %>% select(VariableC3) %>% na.omit() %>% pull())
+
+Man_cont0 <- c(VarsToUse %>%  filter(Domain %in% "Contextual" & Dataset == "ISG") %>% select(VariableC1) %>% na.omit() %>% pull(),
+              VarsToUse %>%  filter(Domain %in% "Contextual" & Dataset == "ISG") %>% select(VariableC2) %>% na.omit() %>% pull(),
+              VarsToUse %>%  filter(Domain %in% "Contextual" & Dataset == "ISG") %>% select(VariableC3) %>% na.omit() %>% pull())
+
+Scores <- VarsToUse %>%  filter(Construct %in% "Scores" & Dataset == "ISG") %>% select(VariableName) %>% na.omit() %>% pull()
+
+ISC_rec <- ISC_lv %>% select(all_of(Id), all_of(Man_cont0), all_of(Indicfa), all_of(Man_cate0), all_of(Sample), all_of(Scalesr))
+source("3.Recod_var_for_modelling.R")
+
+ISC_lvR <- ISC_lv %>% select(-all_of(Sample), -all_of(Man_cate0), -all_of(Man_cont0), -all_of(Indicfa)) %>% 
+  left_join(ISC_rec, by = all_of(Id))
+rm(ISC_rec)
+
+#save(ISC_lvR, VarsToUse, file = "ICCSAll_lvR.RData")
+```
+
+# Multilevel modelling (MLM)  {.tabset .tabset-fade .tabset-pills}
+
+In this section a multilevel model was performed to evaluate the variability of the scale considering the nested structure of the data. The first model use the three cycles of CIVED/ICCS as a level, followed by Country level and finally School level.
+Next, The analysis is performed to all countries participating in each cycle separately, using country and school level. 
+Results are obtained for the models indicated using Null model followed by the model with some explanatory variables at the student level. 
+
+Dependant variables:  
+
+Ethn_Equal: Attitudes toward equal rights for all ethnic or racial groups calculated by CFA (min = 0, max = 100)   
+Gend_Equal: Attitudes toward gender equality calculated by CFA  (min = 0, max = 100) 
+Immi_Equal: Attitudes toward equal rights for immigrants calculated by CFA (min = 0, max = 100) 
+
+Explanatory variables:  
+
+T_AGE: Age of the student   
+T_GENDER: Gender of the student [0 = Boy(ref), 1 = Girl]   
+T_RELIG: Student's religious affiliation [0 = No Religion(ref), 1 = Religion] 
+T_IMMGR: Immigration status [0 = Native(ref), 1 = Immigrant]    
+T_HOMELIT: Home literacy resources [0 = 0-10 books(ref), 1 = 11-25 books, 2 = 26-100 books, 3 = 101-200 books, 4 = More than 200 books]  
+T_HISEI: Highest parental occupational status (min = 0, max = 100)   
+T_NISB: National index of socioeconomic background  (min = 0, max = 100)
+
+The function used is $lmer(Dep ~ Indep + (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL), data=data, weights=SENWGT,  REML=FALSE)$ for the three level model and 
+$lmer(Dep ~ Indep + (1|COUNTRY) + (1|COUNTRY:IDSCHOOL), data=data, weights=SENWGT,  REML=FALSE)$ for the two level model.  
+
+```{r mlm, fig.height = 9, fig.width = 7, results = 'asis'}
+load("ICCSAll_lvR.RData")
+
+Man_cate <- VarsToUse %>%  filter(Domain %in% "Background questionnaires" & Dataset == "ISG") %>% select(VariableName) %>% pull()
+Man_cont <- VarsToUse %>%  filter(Domain %in% "Contextual" & Dataset == "ISG") %>% select(VariableName) %>% pull() %>% na.omit()
+sampleID <- c("IDJK", "IDCL")
+
+source("4.mlm.R")
+
+cat('\n')
+cat('\n')
+cat('## Two level model: School nested in countries by cycles  \n')
+cat('\n')
+cat('\n')
+cat('### Null model  \n')
+cat('\n')
+cat('\n')
+t2
+t3
+t4
+cat('\n')
+cat('\n')
+cat('### Model with independent variables  \n')
+cat('\n')
+cat('\n')
+b11
+b21
+b31
+cat('\n')
+cat('\n')
+cat('\n')
+cat('\n')
+cat('## Three level model: School nested in countries and in cycles  \n')
+cat('\n')
+cat('\n')
+cat('### Null model  \n')
+t1
+cat('\n')
+cat('\n')
+cat('### Model with independent variables  \n')
+cat('\n')
+cat('\n')
+t5
+cat('\n')
+cat('\n')
+```
+
+#  Log linear model / Poisson regression {.tabset .tabset-fade .tabset-pills}
+ 
+Contingency table used for log linear model using Poisson distribution using four categories in response variables, *Strongly disagree*, *Disagree*, *Agree*, *Strongly agree*.  
+The function used is glm() using svydesign() to account for nested data, cluster and weights. The design was defined as $svydesign(ids = ~IDSCHOOL, weights = ~SENWGT, strata = ~IDCNTRY, nest = TRUE, data=data)$  and 
+$svyglm(formula = , design = survey.design, family = poisson, data = data)$.    
+
+```{r lgn, results = 'asis'}
+Scales <- c(VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableName) %>% na.omit() %>% pull())
+sampleID <- c("IDJK", "IDCL", "SENWGT")
+
+source("5.logistic_loglin.R")
+
+cat('## Attitudes toward equal rights for immigrants \n')
+cat("  \n")
+cat("  \n")
+ll11
+cat("  \n")
+cat("  \n")
+ll12
+cat("  \n")
+cat("  \n")
+ll13
+cat("  \n")
+cat("  \n")
+ll14
+cat("  \n")
+cat("  \n")
+ll15
+cat("  \n")
+cat("  \n")
+cat('## Attitudes toward equal rights for gender \n')
+cat("  \n")
+cat("  \n")
+ll21
+cat("  \n")
+cat("  \n")
+ll22
+cat("  \n")
+cat("  \n")
+ll23
+cat("  \n")
+cat("  \n")
+ll24
+cat("  \n")
+cat("  \n")
+ll25
+cat("  \n")
+cat("  \n")
+ll26
+cat("  \n")
+cat("  \n")
+ll27
+cat("  \n")
+cat("  \n")
+cat('## Attitudes toward equal rights for ethnics \n')
+cat("  \n")
+cat("  \n")
+ll31
+cat("  \n")
+cat("  \n")
+ll32
+cat("  \n")
+cat("  \n")
+ll33
+cat("  \n")
+cat("  \n")
+ll34
+cat("  \n")
+cat("  \n")
+ll35
+cat("  \n")
+cat("  \n")
+```
+
+
+# Logistic regression {.tabset .tabset-fade .tabset-pills}
+
+Logistic regression was performed dichotomizing response variable in *Agree* and *Disagree* categories, being the last one the reference level.  
+
+The function used is glm() using svydesign() to account for nested data, cluster and weights. The design was defined as $svydesign(ids = ~IDSCHOOL, weights = ~SENWGT, strata = ~IDCNTRY, nest = TRUE, data=data)$   
+$svyglm(formula = , design = survey.design, family = binomial, data = data)$
+
+```{r lga, results = 'asis'}
+
+cat('## Attitudes toward equal rights for immigrants \n')
+cat("  \n")
+cat("  \n")
+ll11
+cat("  \n")
+cat("  \n")
+ll12
+cat("  \n")
+cat("  \n")
+ll13
+cat("  \n")
+cat("  \n")
+ll14
+cat("  \n")
+cat("  \n")
+ll15
+cat("  \n")
+cat("  \n")
+cat('## Attitudes toward equal rights for gender \n')
+cat("  \n")
+cat("  \n")
+ll21
+cat("  \n")
+cat("  \n")
+ll22
+cat("  \n")
+cat("  \n")
+ll23
+cat("  \n")
+cat("  \n")
+ll24
+cat("  \n")
+cat("  \n")
+ll25
+cat("  \n")
+cat("  \n")
+ll26
+cat("  \n")
+cat("  \n")
+ll27
+cat("  \n")
+cat("  \n")
+cat('## Attitudes toward equal rights for ethnics \n')
+cat("  \n")
+cat("  \n")
+ll31
+cat("  \n")
+cat("  \n")
+ll32
+cat("  \n")
+cat("  \n")
+ll33
+cat("  \n")
+cat("  \n")
+ll34
+cat("  \n")
+cat("  \n")
+ll35
+cat("  \n")
+cat("  \n")
+```
+
+

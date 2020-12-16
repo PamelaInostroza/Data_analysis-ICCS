@@ -16,6 +16,7 @@
 *.Rproj
 # Html file from Markdowm
 Main_code.html
+*.md
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
@@ -31,3 +32,16 @@ vignettes/*.pdf
 *.xlsx
 *.xls
 debug.log
+# Mplus
+*.inp
+*.dat
+*.log
+# SPSS
+*.sav
+*.pdf
+*.sdb
+*.sps
+*.sas
+*.txt
+#Figures
+*.png

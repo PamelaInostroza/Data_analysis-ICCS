@@ -41,6 +41,7 @@ debug.log
 *.sav
 *.pdf
 *.sdb
+*.db
 *.sps
 *.sas
 *.txt

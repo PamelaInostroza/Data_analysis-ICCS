@@ -1,5 +1,5 @@
 ---
-title: "Attitudes toward equality - CIVED 1999/ ICCS 2009/ ICCS 2016"
+title: "Attitudes toward equality - part 1"
 author: "Pamela Inostroza Fernández"
 date: "November 2020"
 output: 
@@ -12,6 +12,8 @@ output:
     number_sections: true
     theme: united
     highlight: tango
+editor_options: 
+  chunk_output_type: console
 ---
 
 # Files analyzed  
@@ -22,16 +24,14 @@ This summary include the following selected countries and years (cycle) in the a
 
 ```{r setup, echo = FALSE, message = FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
-knitr::opts_knit$set(root.dir = 'C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis')
+#knitr::opts_knit$set(root.dir = 'C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis')
 library(haven)
 library(readxl)
 library(tidyverse)
 options(scipen = 999)
 options(knitr.kable.NA = '')
 
-setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/")
-sys.source("Data_analysis/functions.R", envir = knitr::knit_global())
-
+#setwd("C:/Users/pamel/OneDrive - KU Leuven/Master in Statistics/Master Thesis/")
 ```  
 
 **Participant countries**  
@@ -45,9 +45,8 @@ d. Southern European Countries: Italy, Malta.
 e. Latin American Countries: Chile, Peru, Colombia, Dominican Republic, Mexico.  
 
 ```{r data}
-Countries <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "CNT")
-Files <- read_xlsx("Data_analysis/Metadata.xlsx", sheet = "Files")
-Scales <- read_xlsx("Data_analysis/Items scales.xlsx", sheet = "Scales")
+Countries <- read_xlsx("Metadata.xlsx", sheet = "CNT")
+Files <- read_xlsx("Metadata.xlsx", sheet = "Files")
 CNTa <- c("DNK", "FIN", "NOR", "SWE")
 CNTb <- c("BFL", "NLD")
 CNTc <- c("BGR", "EST", "LVA", "LTU", "HRV", "SVN")
@@ -56,11 +55,12 @@ CNTe <- c("CHL", "PER", "COL", "DOM", "MEX")
 CNT <- c(CNTa, CNTb, CNTc, CNTd, CNTe)
 # c(AUS", "BFL", "BGR", "CHE", "CHL", "COL", "CYP", "CZE", "DEU", "DNK", "DOM", "ENG", "ESP", "EST", "FIN", "FRA", "GRC", "HKG", "HRV", "HUN", "ISR", "ITA", "KOR", "LTU", "LVA", "MEX", "MLT", "NLD", "NOR", "PER", "POL", "PRT", "ROM", "RUS", "SRB", "SVK", "SVN", "SWE", "TWN", "USA") CNTb #
 
+Itemdesc <- read_xlsx("Items scales.xlsx", sheet = "Scales")
 years <- Countries %>% filter(AlphaCode %in% CNT & !is.na(Part)) %>% dplyr::select(Country, AlphaCode, year) 
 
 ```
 
-```{r namesfiles, comment=""}
+```{r namesfiles, comment="", eval=FALSE}
 filenames <- NULL
 cat("Countries selected and year participation in CIVED/ICCS:  \n")
 
@@ -119,62 +119,62 @@ for (nc in 1:length(filenames)) {
   print(paste("nc:",filenames[nc]))
   if (substr(filenames[nc],24,26) == "ICG" | substr(filenames[nc],28,30) == "bc_") {
     if (substr(filenames[nc],34,35) == "f2") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      dataset <- read_sav(file.path("Data", filenames[nc]))
       dataset_r <- dataset %>% rename_at(vars(colnames(dataset)), ~ toupper(colnames(dataset)))
       ICGC1 <- rbind(ICGC1, dataset_r)
     } else if (substr(filenames[nc],30,31) == "C2") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      dataset <- read_sav(file.path("Data", filenames[nc]))
       ICGC2 <- rbind(ICGC2, dataset)
     } else if (substr(filenames[nc],30,31) == "C3") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      dataset <- read_sav(file.path("Data", filenames[nc]))
       ICGC3 <- rbind(ICGC3, dataset)
     }
   }
   if (substr(filenames[nc],24,26) == "ITG" | substr(filenames[nc],28,30) == "bt_"){
     if (substr(filenames[nc],34,35) == "f2") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      dataset <- read_sav(file.path("Data", filenames[nc]))
       dataset_r <- dataset %>% rename_at(vars(colnames(dataset)), ~ toupper(colnames(dataset)))
       ITGC1 <- rbind(ITGC1, dataset_r)
     } else if (substr(filenames[nc],30,31) == "C2") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      dataset <- read_sav(file.path("Data", filenames[nc]))
       ITGC2 <- rbind(ITGC2, dataset)
     } else if (substr(filenames[nc],30,31) == "C3") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      dataset <- read_sav(file.path("Data", filenames[nc]))
       ITGC3 <- rbind(ITGC3, dataset)
     }
   }
   
   if (substr(filenames[nc],24,26) == "ISG" | substr(filenames[nc],28,30) == "bs_"){
    if (substr(filenames[nc],34,35) == "f2") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      dataset <- read_sav(file.path("Data", filenames[nc]))
       dataset_r <- dataset %>% rename_at(vars(colnames(dataset)), ~ toupper(colnames(dataset)))
       dataset_r$IMMIGMLE <- labelled(dataset_r$IMMIGMLE, labels =  c(INVALID = 97, OMITTED = 99), label = attr(dataset_r$IMMIGMLE, "label"))
       dataset_r$WOMRTMLE <- labelled(dataset_r$WOMRTMLE, labels =  c(INVALID = 97, OMITTED = 99), label = attr(dataset_r$WOMRTMLE, "label"))
       ISGC1 <- rbind(ISGC1, dataset_r)
     } else if (substr(filenames[nc],30,31) == "C2") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      dataset <- read_sav(file.path("Data", filenames[nc]))
       ISGC2 <- rbind(ISGC2, dataset)
     } else if (substr(filenames[nc],30,31) == "C3") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))  
+      dataset <- read_sav(file.path("Data", filenames[nc]))  
       ISGC3 <- rbind(ISGC3, dataset)
     }
   }
   
   if (substr(filenames[nc],24,26) == "ISE") {
     if (substr(filenames[nc],30,31) == "C2") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      dataset <- read_sav(file.path("Data", filenames[nc]))
       ISEC2 <- rbind(ISEC2, dataset)
     } else if (substr(filenames[nc],30,31) == "C3") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))  
+      dataset <- read_sav(file.path("Data", filenames[nc]))  
       ISEC3 <- rbind(ISEC3, dataset)
     }
   }
   if (substr(filenames[nc],24,26) == "ISL") {
     if (substr(filenames[nc],30,31) == "C2") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))
+      dataset <- read_sav(file.path("Data", filenames[nc]))
       ISLC2 <- rbind(ISLC2, dataset)
     } else if (substr(filenames[nc],30,31) == "C3") {
-      dataset <- read_sav(file.path("Magda files/Data", filenames[nc]))  
+      dataset <- read_sav(file.path("Data", filenames[nc]))  
       ISLC3 <- rbind(ISLC3, dataset)
     }
   }
@@ -209,7 +209,7 @@ ICGC1$questC <- "ICG"
 ICGC2$questC <- "ICG"
 ICGC3$questC <- "ICG"
 
-ISGC1 <- ISGC1 %>% rename_at(vars(c("TOTWGT","SENWGT")), ~ c("TOTWGT_Gc1", "SENWGT_Gc1"))
+ISGC1 <- ISGC1 %>% rename_at(vars(c("TOTWGT","SENWGT", "JKZONE")), ~ c("TOTWGT_Gc1", "SENWGT_Gc1", "JKZONES"))
 ISGC2 <- ISGC2 %>% rename_at(vars(c("TOTWGTS","SENWGTS", "HOMELIT")), ~ c("TOTWGT_Gc2", "SENWGT_Gc2","SHOMELIT"))
 ISGC3 <- ISGC3 %>% rename_at(vars(c("TOTWGTS")), ~ c("TOTWGT_Gc3"))
 
@@ -228,59 +228,25 @@ ICGC3 <- ICGC3 %>% rename_at(vars(c("TOTWGTC")), ~ c("TOTWGT_Cc3"))
 
 #rm(list = c("dataset","nc","filenames"))
 
-ISGC1 %>% dplyr::select(TOTWGT_Gc1,SENWGT_Gc1, COUNTRY, cycle, questG) %>% group_by(COUNTRY, cycle, questG) %>% 
-  summarise(w99 = sum(TOTWGT_Gc1, na.rm = TRUE),
+#---------------------------------------------
+#---------------------------------------------
+#---------------------------------------------
+#------Summary sample Cycle 1 ----------------
+#------Student general questionnaire ---------
+
+ISGC1 %>% dplyr::select(TOTWGT_Gc1,SENWGT_Gc1, JKZONES, COUNTRY, IDSCHOOL, cycle, questG) %>% 
+  group_by(COUNTRY, cycle, questG) %>% 
+  summarise(W99 = sum(TOTWGT_Gc1, na.rm = TRUE),
             WS99 = round(sum(SENWGT_Gc1, na.rm = TRUE),0),
-            n = n()) %>% knitr::kable()
+            nStr99 = n_distinct(JKZONES),
+            nSch99 = n_distinct(IDSCHOOL),
+            nStu99 = n()) %>% knitr::kable()
 
-ISGC2 <- ISGC2 %>% group_by(COUNTRY, cycle, questG) %>%
-  mutate(SENWGT_Gc2 = (TOTWGT_Gc2/sum(TOTWGT_Gc2))*1000) %>% ungroup()
-ISGC2 %>% dplyr::select(TOTWGT_Gc2, SENWGT_Gc2, COUNTRY, cycle, questG)  %>% 
-  group_by(COUNTRY, cycle, questG) %>% 
-  summarise(w09 = sum(TOTWGT_Gc2, na.rm = TRUE),
-            w09s =sum(SENWGT_Gc2, na.rm = TRUE),
-            n = n()) %>% knitr::kable()
+#------Stratum with only one school------------
+ISGC1 %>% dplyr::select(JKZONES, COUNTRY, IDSCHOOL, cycle, questG) %>% group_by(COUNTRY, cycle, questG, JKZONES) %>% 
+  summarise(n_schools = n_distinct(IDSCHOOL)) %>% group_by(cycle, COUNTRY, n_schools) %>% count() %>% filter(n_schools == 1)
 
-ISGC3 <- ISGC3 %>% group_by(COUNTRY, cycle, questG) %>% 
-  mutate(SENWGT_Gc3 = (TOTWGT_Gc3/sum(TOTWGT_Gc3))*1000) %>% ungroup()
-ISGC3 %>% dplyr::select(TOTWGT_Gc3, SENWGT_Gc3, COUNTRY, cycle, questG) %>% 
-  group_by(COUNTRY, cycle, questG) %>% 
-  summarise(w16 = sum(TOTWGT_Gc3, na.rm = TRUE),
-            w16s = sum(SENWGT_Gc3, na.rm = TRUE),
-            n = n()) %>% knitr::kable()
-
-ISEC2 <- ISEC2 %>% group_by(COUNTRY, cycle, questE) %>% 
-  mutate(SENWGT_Ec2 = (TOTWGT_Ec2/sum(TOTWGT_Ec2))*1000) %>% ungroup()
-ISEC2 %>% dplyr::select(TOTWGT_Ec2,SENWGT_Ec2, COUNTRY, cycle, questE) %>% 
-  group_by(COUNTRY, cycle, questE) %>% 
-  summarise(w09 = round(sum(TOTWGT_Ec2, na.rm = TRUE),2),
-            WS09 = round(sum(SENWGT_Ec2, na.rm = TRUE),0),
-            n = n()) %>% knitr::kable()
-
-ISEC3 <- ISEC3 %>% group_by(COUNTRY, cycle, questE) %>% 
-  mutate(SENWGT_Ec3 = (TOTWGT_Ec3/sum(TOTWGT_Ec3))*1000) %>% ungroup()
-ISEC3 %>% dplyr::select(TOTWGT_Ec3, SENWGT_Ec3, COUNTRY, cycle, questE) %>% 
-  group_by(COUNTRY, cycle, questE) %>% 
-  summarise(w16 = round(sum(TOTWGT_Ec3, na.rm = TRUE),2),
-            WS16 = round(sum(SENWGT_Ec3, na.rm = TRUE),0),
-            n = n()) %>% knitr::kable()
-
-ISLC2 <- ISLC2 %>% group_by(COUNTRY, cycle, questL) %>% 
-  mutate(SENWGT_Lc2 = (TOTWGT_Lc2/sum(TOTWGT_Lc2))*1000) %>% ungroup()
-ISLC2 %>% dplyr::select(TOTWGT_Lc2,SENWGT_Lc2, COUNTRY, cycle, questL) %>%
-  group_by(COUNTRY, cycle, questL) %>%
-  summarise(w09 = round(sum(TOTWGT_Lc2, na.rm = TRUE),2),
-            WS09 = round(sum(SENWGT_Lc2, na.rm = TRUE),0),
-            n = n()) %>% knitr::kable()
-
-ISLC3 <- ISLC3 %>%  group_by(COUNTRY, cycle, questL) %>% 
-  mutate(SENWGT_Lc3 = (TOTWGT_Lc3/sum(TOTWGT_Lc3))*1000) %>% ungroup()
-ISLC3 %>% dplyr::select(TOTWGT_Lc3, SENWGT_Lc3, COUNTRY, cycle, questL) %>%
-  group_by(COUNTRY, cycle, questL) %>% 
-  summarise(w16 = round(sum(TOTWGT_Lc3, na.rm = TRUE),2),
-            WS16 = round(sum(SENWGT_Lc3, na.rm = TRUE),0),
-            n = n()) %>% knitr::kable()
-
+#------Teacher general questionnaire ---------
 # ITGC1 <- ITGC1 %>%  group_by(COUNTRY, cycle, questT) %>%
 #   mutate(SENWGT_Tc1 = (TOTWGT_Tc1/sum(TOTWGT_Tc1))*1000) %>% ungroup()
 # ITGC1 %>% dplyr::select(TOTWGT_Tc1,SENWGT_Tc1, COUNTRY, cycle, questT) %>%
@@ -289,22 +255,7 @@ ISLC3 %>% dplyr::select(TOTWGT_Lc3, SENWGT_Lc3, COUNTRY, cycle, questL) %>%
 #             WS99 = round(sum(SENWGT_Tc1, na.rm = TRUE),0),
 #             n = n()) %>% knitr::kable()
 
-ITGC2 <- ITGC2 %>%  group_by(COUNTRY, cycle, questT) %>% 
-  mutate(SENWGT_Tc2 = (TOTWGT_Tc2/sum(TOTWGT_Tc2))*1000) %>% ungroup()
-ITGC2 %>% dplyr::select(TOTWGT_Tc2,SENWGT_Tc2, COUNTRY, cycle, questT) %>%
-  group_by(COUNTRY, cycle, questT) %>% 
-  summarise(w09 = round(sum(TOTWGT_Tc2, na.rm = TRUE),2),
-            WS09 = round(sum(SENWGT_Tc2, na.rm = TRUE),0),
-            n = n()) %>% knitr::kable()
-
-ITGC3 <- ITGC3 %>% group_by(COUNTRY, cycle, questT) %>% 
-  mutate(SENWGT_Tc3 = (TOTWGT_Tc3/sum(TOTWGT_Tc3))*1000) %>% ungroup()
-ITGC3 %>% dplyr::select(TOTWGT_Tc3, SENWGT_Tc3, COUNTRY, cycle, questT) %>% 
-  group_by(COUNTRY, cycle, questT) %>% 
-  summarise(w16 = round(sum(TOTWGT_Tc3, na.rm = TRUE),2),
-            WS16 = round(sum(SENWGT_Tc3, na.rm = TRUE),0),
-            n = n()) %>% knitr::kable()
-
+#------School general questionnaire ---------
 ICGC1 <- ICGC1 %>%  group_by(COUNTRY, cycle, questC) %>% 
   mutate(SENWGT_Cc1 = (TOTWGT_Cc1/sum(TOTWGT_Cc1))*1000) %>% ungroup()
 ICGC1 %>% dplyr::select(TOTWGT_Cc1,SENWGT_Cc1, COUNTRY, cycle, questC) %>%
@@ -313,6 +264,56 @@ ICGC1 %>% dplyr::select(TOTWGT_Cc1,SENWGT_Cc1, COUNTRY, cycle, questC) %>%
             WS99 = round(sum(SENWGT_Cc1, na.rm = TRUE),0),
             n = n()) %>% knitr::kable()
 
+
+#---------------------------------------------
+#------Summary sample Cycle 2 ----------------
+#------Student general questionnaire ---------
+ISGC2 <- ISGC2 %>% group_by(COUNTRY, cycle, questG) %>%
+  mutate(SENWGT_Gc2 = (TOTWGT_Gc2/sum(TOTWGT_Gc2))*1000) %>% ungroup()
+ISGC2 %>% dplyr::select(TOTWGT_Gc2, SENWGT_Gc2, JKZONES, COUNTRY, IDSCHOOL, cycle, questG)  %>% 
+  group_by(COUNTRY, cycle, questG) %>% 
+  summarise(W09 = sum(TOTWGT_Gc2, na.rm = TRUE),
+            WS09 =sum(SENWGT_Gc2, na.rm = TRUE),
+            nStr09 = n_distinct(JKZONES),
+            nSch09 = n_distinct(IDSCHOOL),
+            nStu09 = n()) %>% knitr::kable()
+
+#------Student European questionnaire ---------
+ISEC2 <- ISEC2 %>% group_by(COUNTRY, cycle, questE) %>% 
+  mutate(SENWGT_Ec2 = (TOTWGT_Ec2/sum(TOTWGT_Ec2))*1000) %>% ungroup()
+ISEC2 %>% dplyr::select(TOTWGT_Ec2,SENWGT_Ec2, JKZONES,COUNTRY, cycle, questE) %>% 
+  group_by(COUNTRY, cycle, questE) %>% 
+  summarise(W09 = round(sum(TOTWGT_Ec2, na.rm = TRUE),2),
+            WS09 = round(sum(SENWGT_Ec2, na.rm = TRUE),0),
+            nStr09 = n_distinct(JKZONES),
+            nSch09 = n_distinct(IDSCHOOL),
+            nStu09 = n()) %>% knitr::kable()
+
+#------Student Latinam questionnaire ---------
+ISLC2 <- ISLC2 %>% group_by(COUNTRY, cycle, questL) %>% 
+  mutate(SENWGT_Lc2 = (TOTWGT_Lc2/sum(TOTWGT_Lc2))*1000) %>% ungroup()
+ISLC2 %>% dplyr::select(TOTWGT_Lc2,SENWGT_Lc2, JKZONES, COUNTRY, cycle, questL) %>%
+  group_by(COUNTRY, cycle, questL) %>%
+  summarise(W09 = round(sum(TOTWGT_Lc2, na.rm = TRUE),2),
+            WS09 = round(sum(SENWGT_Lc2, na.rm = TRUE),0),
+            nStr09 = n_distinct(JKZONES),
+            nSch09 = n_distinct(IDSCHOOL),
+            nStu09 = n()) %>% knitr::kable()
+
+#------Stratus with only one school------------
+ISGC2 %>% dplyr::select(JKZONES, COUNTRY, IDSCHOOL, cycle, questG) %>% group_by(COUNTRY, cycle, questG, JKZONES) %>% 
+  summarise(n_schools = n_distinct(IDSCHOOL)) %>% group_by(cycle, COUNTRY, n_schools) %>% count() %>% filter(n_schools == 1)
+
+#------Teacher general questionnaire ---------
+ITGC2 <- ITGC2 %>%  group_by(COUNTRY, cycle, questT) %>% 
+  mutate(SENWGT_Tc2 = (TOTWGT_Tc2/sum(TOTWGT_Tc2))*1000) %>% ungroup()
+ITGC2 %>% dplyr::select(TOTWGT_Tc2,SENWGT_Tc2, COUNTRY, cycle, questT) %>%
+  group_by(COUNTRY, cycle, questT) %>% 
+  summarise(w09 = round(sum(TOTWGT_Tc2, na.rm = TRUE),2),
+            WS09 = round(sum(SENWGT_Tc2, na.rm = TRUE),0),
+            n = n()) %>% knitr::kable()
+
+#------School general questionnaire ---------
 ICGC2 <- ICGC2 %>% group_by(COUNTRY, cycle, questC) %>% 
   mutate(SENWGT_Cc2 = (TOTWGT_Cc2/sum(TOTWGT_Cc2))*1000) %>% ungroup()
 ICGC2 %>% dplyr::select(TOTWGT_Cc2, SENWGT_Cc2, COUNTRY, cycle, questC) %>% 
@@ -321,6 +322,54 @@ ICGC2 %>% dplyr::select(TOTWGT_Cc2, SENWGT_Cc2, COUNTRY, cycle, questC) %>%
             WS09 = round(sum(SENWGT_Cc2, na.rm = TRUE),0),
             n = n()) %>% knitr::kable()
 
+
+#---------------------------------------------
+#------Summary sample Cycle 3 ----------------
+#------Student general questionnaire ---------
+ISGC3 <- ISGC3 %>% group_by(COUNTRY, cycle, questG) %>% 
+  mutate(SENWGT_Gc3 = (TOTWGT_Gc3/sum(TOTWGT_Gc3))*1000) %>% ungroup()
+ISGC3 %>% dplyr::select(TOTWGT_Gc3, SENWGT_Gc3, JKZONES, COUNTRY, IDSCHOOL, cycle, questG) %>% 
+  group_by(COUNTRY, cycle, questG) %>% 
+  summarise(W16 = sum(TOTWGT_Gc3, na.rm = TRUE),
+            WS16 = sum(SENWGT_Gc3, na.rm = TRUE),
+            nStr16 = n_distinct(JKZONES),
+            nSch16 = n_distinct(IDSCHOOL),
+            nStu16 = n()) %>% knitr::kable()
+
+#------Student European questionnaire ---------
+ISEC3 <- ISEC3 %>% group_by(COUNTRY, cycle, questE) %>% 
+  mutate(SENWGT_Ec3 = (TOTWGT_Ec3/sum(TOTWGT_Ec3))*1000) %>% ungroup()
+ISEC3 %>% dplyr::select(TOTWGT_Ec3, SENWGT_Ec3, JKZONES, COUNTRY, cycle, questE) %>% 
+  group_by(COUNTRY, cycle, questE) %>% 
+  summarise(W16 = round(sum(TOTWGT_Ec3, na.rm = TRUE),2),
+            WS16 = round(sum(SENWGT_Ec3, na.rm = TRUE),0),
+            JK16 = n_distinct(JKZONES),
+            n = n()) %>% knitr::kable()
+
+#------Student Latinam questionnaire ---------
+ISLC3 <- ISLC3 %>%  group_by(COUNTRY, cycle, questL) %>% 
+  mutate(SENWGT_Lc3 = (TOTWGT_Lc3/sum(TOTWGT_Lc3))*1000) %>% ungroup()
+ISLC3 %>% dplyr::select(TOTWGT_Lc3, SENWGT_Lc3, JKZONES, COUNTRY, cycle, questL) %>%
+  group_by(COUNTRY, cycle, questL) %>% 
+  summarise(W16 = round(sum(TOTWGT_Lc3, na.rm = TRUE),2),
+            WS16 = round(sum(SENWGT_Lc3, na.rm = TRUE),0),
+            JK16 = n_distinct(JKZONES),
+            n = n()) %>% knitr::kable()
+
+#------Stratus with only one school------------
+ISGC3 %>% dplyr::select(JKZONES, COUNTRY, IDSCHOOL, cycle, questG) %>% group_by(COUNTRY, cycle, questG, JKZONES) %>% 
+  summarise(n_schools = n_distinct(IDSCHOOL)) %>% group_by(cycle, COUNTRY, n_schools) %>% count() %>% filter(n_schools == 1)
+
+#------Teacher general questionnaire ---------
+ITGC3 <- ITGC3 %>% group_by(COUNTRY, cycle, questT) %>% 
+  mutate(SENWGT_Tc3 = (TOTWGT_Tc3/sum(TOTWGT_Tc3))*1000) %>% ungroup()
+ITGC3 %>% dplyr::select(TOTWGT_Tc3, SENWGT_Tc3, COUNTRY, cycle, questT) %>% 
+  group_by(COUNTRY, cycle, questT) %>% 
+  summarise(w16 = round(sum(TOTWGT_Tc3, na.rm = TRUE),2),
+            WS16 = round(sum(SENWGT_Tc3, na.rm = TRUE),0),
+            n = n()) %>% knitr::kable()
+
+#------School general questionnaire ---------
 ICGC3 <- ICGC3 %>% group_by(COUNTRY, cycle, questC) %>% 
   mutate(SENWGT_Cc3 = (TOTWGT_Cc3/sum(TOTWGT_Cc3))*1000) %>% ungroup()
 ICGC3 %>% dplyr::select(TOTWGT_Cc3, SENWGT_Cc3, COUNTRY, cycle, questC) %>%
@@ -334,36 +383,36 @@ ICGC3 %>% dplyr::select(TOTWGT_Cc3, SENWGT_Cc3, COUNTRY, cycle, questC) %>%
 ```{r codebooks, eval=FALSE}
 
 #Joining Questionnaires for Students 
-tabISG3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ISGC3")
-tabISG3 <- tabISG3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISG")
-tabISE3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ISEC3")
-tabISE3 <- tabISE3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISE")
-tabISL3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ISLC3")
-tabISL3 <- tabISL3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISL")
-tabITG3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ITGC3")
-tabITG3 <- tabITG3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ITG")
-tabICG3 <- read_xlsx("Data_analysis/ICCS2016MS_Codebook.xlsx", sheet = "ICGC3")
-tabICG3 <- tabICG3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ICG")
+tabISG3 <- read_xlsx("ICCS2016MS_Codebook.xlsx", sheet = "ISGC3")
+tabISG3 <- tabISG3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, VariableName, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISG")
+tabISE3 <- read_xlsx("ICCS2016MS_Codebook.xlsx", sheet = "ISEC3")
+tabISE3 <- tabISE3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, VariableName, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISE")
+tabISL3 <- read_xlsx("ICCS2016MS_Codebook.xlsx", sheet = "ISLC3")
+tabISL3 <- tabISL3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, VariableName, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ISL")
+tabITG3 <- read_xlsx("ICCS2016MS_Codebook.xlsx", sheet = "ITGC3")
+tabITG3 <- tabITG3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, VariableName, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ITG")
+tabICG3 <- read_xlsx("ICCS2016MS_Codebook.xlsx", sheet = "ICGC3")
+tabICG3 <- tabICG3 %>% dplyr::select(ID,VariableC3, VariableC2, VariableC1, VariableName, Domain, Construct, Label, `Value Scheme Detailed`) %>% mutate(Dataset = "ICG")
 
 VarsToUse <- tabISG3 %>% rbind(tabISE3) %>% rbind(tabISL3) %>% rbind(tabITG3) %>% rbind(tabICG3)
 VarsToUse <- VarsToUse %>% filter(!is.na(Construct))
 rm("tabISG3", "tabISE3", "tabISL3", "tabITG3", "tabICG3")
 
 
-idS <- VarsToUse %>% filter(Dataset == "ISG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE", "IDPOP", "IDBOOK")) %>% dplyr::select(VariableC3) %>%  pull()
-idT <- VarsToUse %>% filter(Dataset == "ITG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE")) %>% dplyr::select(VariableC3) %>%  pull()
-idC <- VarsToUse %>% filter(Dataset == "ICG" & Construct == "ID Variables" & !VariableC3 %in% c("IDGRADE")) %>% dplyr::select(VariableC3) %>%  pull()
+idS <- VarsToUse %>% filter(Dataset == "ISG" & Construct == "ID Variables" & !VariableName %in% c("IDGRADE", "IDPOP", "IDBOOK")) %>% dplyr::select(VariableName) %>%  pull()
+idT <- VarsToUse %>% filter(Dataset == "ITG" & Construct == "ID Variables" & !VariableName %in% c("IDGRADE")) %>% dplyr::select(VariableName) %>%  pull()
+idC <- VarsToUse %>% filter(Dataset == "ICG" & Construct == "ID Variables" & !VariableName %in% c("IDGRADE")) %>% dplyr::select(VariableName) %>%  pull()
 
 ```
 
 ```{r mergedata, eval=FALSE}
-repet <- c("SAGE", "SGENDER", "S_GENDER", "S_AGE")
-addvar <- c( "cycle", "questG", "questL", "questE", "questT", "questC",
+repet <- c("SAGE", "SGENDER", "S_GENDER", "S_AGE") # repeated in datasets
+addvar <- c( "cycle", "questG", "questL", "questE", "questT", "questC", #created variables added to dataset
              "TOTWGT_Gc1", "SENWGT_Gc1", "TOTWGT_Gc2", "SENWGT_Gc2", "TOTWGT_Gc3", "SENWGT_Gc3",
                                          "TOTWGT_Ec2", "SENWGT_Ec2", "TOTWGT_Ec3", "SENWGT_Ec3",
                                          "TOTWGT_Lc2", "SENWGT_Lc2", "TOTWGT_Lc3", "SENWGT_Lc3",
                                          "TOTWGT_Tc2", "SENWGT_Tc2", "TOTWGT_Tc3", "SENWGT_Tc3",
-             "TOTWGT_Cc1", "SENWGT_Cc1", "TOTWGT_Cc2", "SENWGT_Cc2", "TOTWGT_Cc3", "SENWGT_Cc3")
+             "TOTWGT_Cc1", "SENWGT_Cc1", "TOTWGT_Cc2", "SENWGT_Cc2", "TOTWGT_Cc3", "SENWGT_Cc3", "JKZONES") 
  
 #Merging student questionnaires same cycle, General + European + Latin American
 varsC1 <- VarsToUse %>% filter(!is.na(VariableC1) & Dataset %in% c("ISG", "ISE", "ISL")) %>% dplyr::select(VariableC1) %>% pull()
@@ -374,20 +423,20 @@ if (is.data.frame(ISGC1)) ISC1 <- ISGC1[, colnames(ISGC1) %in% c(varsC1,addvar)]
 
 if (is.data.frame(ISGC2) & is.data.frame(ISEC2)) {
   ISC2 <- ISGC2[, colnames(ISGC2) %in% c(varsC2, addvar)] %>% 
-    full_join(ISEC2[, colnames(ISEC2) %in% c(varsC2[!varsC2 %in% repet], addvar)], by = c("cycle", idS)) 
+    full_join(ISEC2[, colnames(ISEC2) %in% c(varsC2[!varsC2 %in% repet], addvar)], by = c(idS)) #repeated added only in first cycle
 }  
 if (is.data.frame(ISC2) & is.data.frame(ISLC2))  {
   ISC2 <- ISC2 %>% 
-    full_join(ISLC2[, colnames(ISLC2) %in% c(varsC2[!varsC2 %in% repet], addvar)], by = c("cycle", idS)) 
+    full_join(ISLC2[, colnames(ISLC2) %in% c(varsC2[!varsC2 %in% repet], addvar)], by = c(idS)) 
 }
 
 if (is.data.frame(ISGC3) & is.data.frame(ISEC3)) {
   ISC3 <- ISGC3[, colnames(ISGC3) %in% c(varsC3, addvar)] %>% 
-    full_join(ISEC3[, colnames(ISEC3) %in% c(varsC3[!varsC3 %in% repet], addvar)], by = c("cycle", idS)) 
+    full_join(ISEC3[, colnames(ISEC3) %in% c(varsC3[!varsC3 %in% repet], addvar)], by = c(idS)) 
 }  
 if (is.data.frame(ISC3) & is.data.frame(ISLC3))  {
   ISC3 <- ISC3 %>% 
-    full_join(ISLC3[, colnames(ISLC3) %in% c(varsC3[!varsC3 %in% repet], addvar)], by = c("cycle", idS)) 
+    full_join(ISLC3[, colnames(ISLC3) %in% c(varsC3[!varsC3 %in% repet], addvar)], by = c(idS)) 
 }
 
 #######Student files
@@ -401,8 +450,8 @@ if (!exists("ISC2")) ISC2 <- NULL
 if (!exists("ISC3")) ISC3 <- NULL
   
 ISC <- ISC1 %>%
-  bind_rows(ISC2) %>%
-  bind_rows(ISC3) 
+  sjmisc::add_rows(ISC2) %>%
+  sjmisc::add_rows(ISC3) 
 
 #######Teacher file
 #Setting (row bind) cycles for Teacher Questionnaires
@@ -418,8 +467,8 @@ if (!is.data.frame(ITGC2)) ITGC2 <- NULL else ITGC2 <- ITGC2[, colnames(ITGC2) %
 if (!is.data.frame(ITGC3)) ITGC3 <- NULL else ITGC3 <- ITGC3[, colnames(ITGC3) %in% c(varsC3, addvar)]
  
 ITG <- ITGC1 %>%
-  bind_rows(ITGC2) %>%
-  bind_rows(ITGC3) 
+  sjmisc::add_rows(ITGC2) %>%
+  sjmisc::add_rows(ITGC3) 
 
 ########School file
 #Merging cycles for School Questionnaires
@@ -435,8 +484,8 @@ if (!is.data.frame(ICGC2)) ICGC2 <- NULL else ICGC2 <- ICGC2[, colnames(ICGC2) %
 if (!is.data.frame(ICGC3)) ICGC3 <- NULL else ICGC3 <- ICGC3[, colnames(ICGC3) %in% c(varsC3, addvar)]
  
 ICG <- ICGC1 %>%
-  bind_rows(ICGC2) %>%
-  bind_rows(ICGC3) 
+  sjmisc::add_rows(ICGC2) %>%
+  sjmisc::add_rows(ICGC3) 
 
 #ICCS <- ISC %>% full_join(ITG, by = c("cycle", idC)) %>% full_join(ICG, by = c("cycle", idC))
 
@@ -450,6 +499,8 @@ ICG <- ICGC1 %>%
 #rm(list = c("ITGC2_r", "ITGC3_r"))
 #rm(list = c("ICGC2_r", "ICGC3_r"))
 
+
+  
 ```
 
 **Weights and sample size**  
@@ -458,49 +509,80 @@ The number of observations available for each cycle is in the following tables f
 *n\** corresponds to the effective sample size, *w\** to the total weight and *w\*s* the senate weight (sum up 1000 for each country).  
 
 ```{r Saveddata, results='asis'}
-#save(VarsToUse, ISC, ITG, ICG, file = "Data_analysis/ICCSAll.RData")
+
+#save(VarsToUse, ISC, ITG, ICG, file = "ICCSAll.RData")
+
+rm(list=setdiff(ls(), c("Itemdesc", "years")))
+load("ICCSAll.RData")
+
+Scales <- c(VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableC1) %>% na.omit() %>% pull(),
+            VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% select(VariableC2) %>% na.omit() %>% pull(),
+            VarsToUse %>%  filter(Domain == "Scales" & Dataset  %in% c("ISG","ISE")) %>% select(VariableC3) %>% na.omit() %>% pull())
+
+Indices <- c(VarsToUse %>%  filter(Domain == "Indice" & Dataset  %in% c("ISG","ISE")) %>% select(VariableC1) %>% na.omit() %>% pull(),
+            VarsToUse %>%  filter(Domain == "Indice" & Dataset  %in% c("ISG","ISE")) %>% select(VariableC2) %>% na.omit() %>% pull(),
+            VarsToUse %>%  filter(Domain == "Indice" & Dataset %in% c("ISG","ISE")) %>% select(VariableC3) %>% na.omit() %>% pull())
+
+Id <- VarsToUse %>%  filter(Construct == "ID Variables" & Dataset == "ISG") %>% select(VariableName) %>% na.omit() %>% pull()
+
+Gender <- c(VarsToUse %>%  filter(Construct %in% "Student gender") %>% select(VariableC1) %>% na.omit() %>% pull(),
+              VarsToUse %>%  filter(Construct %in% "Student gender") %>% select(VariableC2) %>% na.omit() %>% pull(),
+              VarsToUse %>%  filter(Construct %in% "Student gender") %>% select(VariableC3) %>% na.omit() %>% pull())
 
 
-load("Data_analysis/ICCSAll.RData")
-#load("Data_analysis/ICCS.RData")
+Sample <-  c(VarsToUse %>%  filter(Construct %in% "Weights" & Dataset == "ISG") %>% select(VariableC1) %>% na.omit() %>% pull(),
+             VarsToUse %>%  filter(Construct %in% "Weights" & Dataset == "ISG") %>% select(VariableC2) %>% na.omit() %>% pull(),
+             VarsToUse %>%  filter(Construct %in% "Weights" & Dataset == "ISG") %>% select(VariableC3) %>% na.omit() %>% pull())
+
+
 
 cat(' \n')
 cat("\n")
-ISC %>% dplyr::select(TOTWGT_Gc1, SENWGT_Gc1, COUNTRY, cycle, questG) %>% 
+ISC %>% dplyr::select(TOTWGT_Gc1, SENWGT_Gc1, IDSCHOOL, JKZONES, COUNTRY, cycle, questG) %>% 
   filter(!is.na(TOTWGT_Gc1)) %>% 
   group_by(COUNTRY, questG) %>% 
-  summarise(n99 = n(),
-            w99 = sum(TOTWGT_Gc1, na.rm = TRUE),
-            w99s =round(sum(SENWGT_Gc1, na.rm = TRUE),0)) %>% 
-  full_join(ISC %>% dplyr::select(TOTWGT_Gc2, SENWGT_Gc2, COUNTRY, cycle, questG) %>% 
+  summarise(w99 = round(sum(TOTWGT_Gc1, na.rm = TRUE),0),
+            w99s =round(sum(SENWGT_Gc1, na.rm = TRUE),0),
+            nStr99 = n_distinct(JKZONES),
+            nSch99 = n_distinct(IDSCHOOL),
+            nStu99 = n()
+            ) %>% 
+  full_join(ISC %>% dplyr::select(TOTWGT_Gc2, SENWGT_Gc2, IDSCHOOL, JKZONES, COUNTRY, cycle, questG) %>% 
                     filter(!is.na(TOTWGT_Gc2)) %>% 
                     group_by(COUNTRY, questG) %>% 
-                    summarise(n09 = n(),
-                              w09 = sum(TOTWGT_Gc2, na.rm = TRUE),
-                              w09s =sum(SENWGT_Gc2, na.rm = TRUE)),by = c("COUNTRY", "questG")) %>% 
-  full_join(ISC %>% dplyr::select(TOTWGT_Gc3, SENWGT_Gc3, COUNTRY, cycle, questG) %>% 
+                    summarise(w09 = round(sum(TOTWGT_Gc2, na.rm = TRUE),0),
+                              w09s =sum(SENWGT_Gc2, na.rm = TRUE),
+                              nStr09 = n_distinct(JKZONES),
+                              nSch09 = n_distinct(IDSCHOOL),
+                              nStu09 = n()),by = c("COUNTRY", "questG")) %>% 
+  full_join(ISC %>% dplyr::select(TOTWGT_Gc3, SENWGT_Gc3, IDSCHOOL, JKZONES, COUNTRY, cycle, questG) %>% 
                     filter(!is.na(TOTWGT_Gc3)) %>% 
                     group_by(COUNTRY, questG) %>% 
-                    summarise(n16 = n(),
-                              w16 = sum(TOTWGT_Gc3, na.rm = TRUE),
-                              w16s =sum(SENWGT_Gc3, na.rm = TRUE)),by = c("COUNTRY", "questG")) %>% 
+                    summarise(w16 = round(sum(TOTWGT_Gc3, na.rm = TRUE),0),
+                              w16s =sum(SENWGT_Gc3, na.rm = TRUE),
+                              nStr16 = n_distinct(JKZONES),
+                              nSch16 = n_distinct(IDSCHOOL),
+                              nStu16 = n()),by = c("COUNTRY", "questG")) %>% 
   arrange(COUNTRY) %>% 
   knitr::kable(caption = "Student questionnaires")
 cat('  \n')
 cat("\n")
-ITG %>% dplyr::select(TOTWGT_Tc2,SENWGT_Tc2, COUNTRY, cycle, questT) %>% 
+ITG %>% dplyr::select(TOTWGT_Tc2,SENWGT_Tc2, IDSCHOOL, COUNTRY, cycle, questT) %>% 
   filter(!is.na(TOTWGT_Tc2)) %>% 
   group_by(COUNTRY, questT) %>% 
-  summarise(n99 = NA,
+  summarise(nTea99 = NA,
+            nSch99 = NA,
             w99 = NA,
             w99s =NA,
-            n09 = n(),
+            nTea09 = n(),
+            nSch09 = n_distinct(IDSCHOOL),
             w09 = sum(TOTWGT_Tc2, na.rm = TRUE),
             w09s =sum(SENWGT_Tc2, na.rm = TRUE)) %>% 
-  full_join(ITG %>% dplyr::select(TOTWGT_Tc3, SENWGT_Tc3, COUNTRY, cycle, questT) %>% 
+  full_join(ITG %>% dplyr::select(TOTWGT_Tc3, SENWGT_Tc3, IDSCHOOL, COUNTRY, cycle, questT) %>% 
                     filter(!is.na(TOTWGT_Tc3)) %>% 
                     group_by(COUNTRY, questT) %>% 
-                    summarise(n16 = n(),
+                    summarise(nTea16 = n(),
+                              nSch16 = n_distinct(IDSCHOOL),
                               w16 = sum(TOTWGT_Tc3, na.rm = TRUE),
                               w16s =sum(SENWGT_Tc3, na.rm = TRUE)),by = c("COUNTRY", "questT")) %>% 
   arrange(COUNTRY) %>% 
@@ -510,23 +592,25 @@ cat("\n")
 ICG %>% dplyr::select(TOTWGT_Cc1,SENWGT_Cc1, COUNTRY, cycle, questC) %>% 
   filter(!is.na(TOTWGT_Cc1)) %>% 
   group_by(COUNTRY, questC) %>% 
-  summarise(n99 = n(),
+  summarise(nSch99 = n(),
             w99 = sum(TOTWGT_Cc1, na.rm = TRUE),
             w99s =round(sum(SENWGT_Cc1, na.rm = TRUE),0)) %>% 
   full_join(ICG %>% dplyr::select(TOTWGT_Cc2, SENWGT_Cc2, COUNTRY, cycle, questC) %>% 
                       filter(!is.na(TOTWGT_Cc2)) %>% 
                       group_by(COUNTRY, questC) %>% 
-                      summarise(n09 = n(),
+                      summarise(nSch09 = n(),
                       w09 = sum(TOTWGT_Cc2, na.rm = TRUE),
                       w09s =sum(SENWGT_Cc2, na.rm = TRUE)), by = c("COUNTRY", "questC")) %>% 
               full_join(ICG %>% dplyr::select(TOTWGT_Cc3, SENWGT_Cc3, COUNTRY, cycle, questC) %>% 
                     filter(!is.na(TOTWGT_Cc3)) %>% 
                     group_by(COUNTRY, questC) %>% 
-                    summarise(n16 = n(),
+                    summarise(nSch16 = n(),
                               w16 = sum(TOTWGT_Cc3, na.rm = TRUE),
                               w16s =sum(SENWGT_Cc3, na.rm = TRUE)), by = c("COUNTRY", "questC")) %>% 
   arrange(COUNTRY) %>% 
   knitr::kable(caption = "School questionnaires")
+
+#colnames(ISC)
 
 ```
 
@@ -539,8 +623,10 @@ Each cycle can be seen in each tab in this section.
 
 ```{r descriptive, fig.height = 8, fig.width = 7, results = 'asis', fig.show='asis'}
 
-source("Data_analysis/Descriptive_Analysis.R")
+ISC_desc <- ISC %>% select(all_of(Id), all_of(Scales), all_of(Indices), all_of(Sample), all_of(Gender))
 
+source("1.Descriptive_Analysis.R")
+rm(ISC_desc)
 ```
 
 # Confirmatory Factor Analysis (CFA)  {.tabset .tabset-fade .tabset-pills}
@@ -550,7 +636,16 @@ Each cycle can be seen in each tab in this section. Finally, last tab show the s
 
 ```{r cfa, fig.height = 11, fig.width = 9, results = 'asis'}
 
-source("Data_analysis/cfa.R")
+ISC$IDJK <- factor(paste0(ISC$IDCNTRY, ISC$JKZONES))
+ISC$IDCL <- factor(paste0(ISC$IDCNTRY, ISC$JKZONES, ISC$IDSCHOOL))
+sampleID <- c("IDJK", "IDCL", Sample)
 
+ISC_cfa <- ISC %>% select(all_of(Id), all_of(Scales), all_of(Sample), all_of(sampleID), all_of(Gender))
+
+source("2.cfa.R")
+
+ISC_lv <- ISC %>% left_join(ISC_cfa, by = all_of(Id))
+#save(ISC_lv, VarsToUse, file = "ICCSAll_lv.RData")
+rm(ISC_cfa)
 ```
 

@@ -33,10 +33,11 @@ subchunkify <- function(g, name, fig_height = 7, fig_width = 5) {
 
 
 #------Graph polCA models classes----------
-graphclass <- function(cmodel = NULL, nclass = NULL, title = NULL){
-  
+graphclass <- function(cmodel = NULL, nclass = NULL, orden = c(1:length(levels(cmodel$param))), title = NULL){
+  a <- levels(cmodel$param)
+  a <- a[order(a)[orden]]
   labels <- NULL
-  for (each in levels(cmodel$param)){
+  for (each in a){
     labels[each] <- paste(str_remove(attr(ISC_lvRlca[[each]], "label"), 
                                      "Rights and Responsibilities/Rights and responsibilities/|Rights and Responsibilities/Roles women and men/|Moving/<Immigrants> |Moving/<Immigrant> "),
                           "-", each)
@@ -49,13 +50,13 @@ graphclass <- function(cmodel = NULL, nclass = NULL, title = NULL){
     labels2[each] <- paste(each, "-", levels(ISC_lvRlca[[cmodel[cmodel$category == each, "param"][1]]])[n])
   }
   
-  cmodel$paramf <- factor(cmodel$param, levels = levels(cmodel$param), labels = labels)
+  cmodel$paramf <- factor(cmodel$param, levels = a, labels = labels)
   cmodel$categoryf <- factor(cmodel$category, levels = levels(cmodel$category), labels = labels2)
   
   zp1 <- ggplot(cmodel,aes(x = paramf, y = value, fill = categoryf)) + 
     geom_bar(stat = "identity", position = "stack") + 
     facet_grid(Class ~ .) + 
-    scale_fill_brewer(type="seq", palette="Greys", direction = -1) +
+    #scale_fill_brewer(type="seq", palette="Greys") +
     theme_bw() + 
     ggtitle(title) +
     labs(x = "Items", y = "Response probabilities", fill ="Response category") + 
@@ -76,7 +77,11 @@ graphclass <- function(cmodel = NULL, nclass = NULL, title = NULL){
 
 #------Summary of polCA models----------
 summaryLCAR2 <- function(Modellist, level1 = 1:3, level2 = 1:5, level3 = 1:5){
+  Fits <- list(C1 = NULL, C2= NULL, C3=NULL)
+  Sizes <- list(C1 = NULL, C2= NULL, C3=NULL)
   if (all(!is.na(level3))){
+    Fits <- list(C1 = list(IMMI=NULL, GNDR = NULL, ETHN = NULL), C2= list(IMMI=NULL, GNDR = NULL, ETHN = NULL), C3=list(IMMI=NULL, GNDR = NULL, ETHN = NULL))
+    Sizes <- list(C1 = list(IMMI=NULL, GNDR = NULL, ETHN = NULL), C2= list(IMMI=NULL, GNDR = NULL, ETHN = NULL), C3=list(IMMI=NULL, GNDR = NULL, ETHN = NULL))
     for (l1 in level1) {
       for (l2 in level2) {
         fit <- data.frame(L1 = NULL, L2 = NULL, NClass = NULL, Chisq = NULL, npar = NULL, loglik = NULL, Gsq = NULL, BIC = NULL, AIC = NULL)
@@ -102,9 +107,8 @@ summaryLCAR2 <- function(Modellist, level1 = 1:3, level2 = 1:5, level3 = 1:5){
           sizes[l3, names(sizes) %in% paste("P", 1:l3, sep = ".")] <- round(Modellist[[l1]][[l2]][[l3]]$P,3)
           if(l3 != 1) sizes[l3, names(sizes) %in% paste("Pse", 1:l3, sep = ".")] <- round(Modellist[[l1]][[l2]][[l3]]$P.se,3)
         }
-        fit %>% na.omit() %>% knitr::kable(caption = paste("Model fit", names(Modellist[l1]), names(Modellist[l1][[1]])[l2]), row.names = FALSE) %>% print() 
-        sizes[level3,] %>% 
-          knitr::kable(caption = paste("Size (s.e) of each latent class", names(Modellist[l1]), names(Modellist[l1][[1]])[l2])) %>% print() 
+        Fits[[l1]][[l2]] <- fit %>% na.omit() 
+        Sizes[[l1]][[l2]] <- sizes[level3,] 
       }
     }
   } else if (all(!is.na(level2) & is.na(level3))){
@@ -130,8 +134,8 @@ summaryLCAR2 <- function(Modellist, level1 = 1:3, level2 = 1:5, level3 = 1:5){
         sizes[l21, names(sizes) %in% paste("P", 1:l21, sep = ".")] <- round(Modellist[[l11]][[l21]]$P,3)
         if(l21 != 1) sizes[l21, names(sizes) %in% paste("Pse", 1:l21, sep = ".")] <- round(Modellist[[l11]][[l21]]$P.se,3)
       }
-      fit %>%  na.omit() %>% knitr::kable(caption = paste("Model fit", names(Modellist[l11])), row.names = FALSE) %>% print() 
-      sizes[level2,] %>% knitr::kable(caption = paste("Size (s.e) of each latent class", names(Modellist[l11]))) %>% print() 
+      Fits[[l11]] <- fit %>% na.omit() 
+      Sizes[[l11]] <- sizes[level2,] 
     }
   } else if (all(is.na(level2) & is.na(level3))){
     fit <- data.frame(NClass = NULL, Chisq = NULL, npar = NULL, loglik = NULL, Gsq = NULL, BIC = NULL, AIC = NULL)
@@ -152,7 +156,9 @@ summaryLCAR2 <- function(Modellist, level1 = 1:3, level2 = 1:5, level3 = 1:5){
       sizes[l12, names(sizes) %in% paste("P", 1:l12, sep = ".")] <- round(Modellist[[l12]]$P,3)
       if(l12 != 1) sizes[l12, names(sizes) %in% paste("Pse", 1:l12, sep = ".")] <- round(Modellist[[l12]]$P.se,3)
     }
-    fit %>%  na.omit() %>% knitr::kable(caption = paste("Model fit All cycles and All scales"), row.names = FALSE) %>% print() 
-    sizes[level1,] %>% knitr::kable(caption = paste("Size (s.e) of each latent class All merged")) %>% print() 
+    Fits[[l12]] <- fit %>% na.omit() 
+    Sizes[[l12]] <- sizes[level1,]
   }
+  Results <- list(Fits = Fits, Size = Sizes)
+  return(Results)
 }

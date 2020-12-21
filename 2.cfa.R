@@ -562,12 +562,13 @@ if (any(grepl("16", years$year))){
     cat('  \n')
     cat('  \n')
     
-    labels <- data.frame(label = tolower(str_remove(sjlabelled::get_label(ds161), "Moving/<Immigrants> | Rights and Responsibilities/Rights and responsibilities/|Rights and Responsibilities/Roles women and men/"))) 
+    labels <- data.frame(label = tolower(sjlabelled::get_label(ds161))) 
     labels <- labels %>% filter(!str_detect(rownames(labels), c("IDSTUD|IDSCHOOL|COUNTRY|TOTWGT|GENDER"))) %>% 
-      mutate(variable = rownames(.))
-    stdl16 <- stdl16 %>% mutate(rhs = factor(rhs, levels = labels$variable, labels = labels$label)) %>% 
+      mutate(variable = rownames(.),
+             label = str_remove(label, "moving/<immigrants> |moving/<immigrant> |rights and responsibilities/rights and responsibilities/|rights and responsibilities/roles women and men/"))
+    stdl162 <- stdl16 %>% mutate(rhs = factor(rhs, levels = labels$variable, labels = labels$label)) %>% 
       mutate(Model = ifelse(cntry %in% c(CNTne,CNT2cne), "Non-European", "European"))
-    l1 <- stdl16 %>% data.frame() %>% 
+    l1 <- stdl162 %>% data.frame() %>% 
       ggplot(aes(x = est.std, y = rhs, color = reorder(cntry, desc(cntry)))) +
       geom_linerange(aes(xmin = ci.lower, xmax = ci.upper), position = position_dodge(0.4)) +
       geom_jitter(position = position_dodge(0.4)) +

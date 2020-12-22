@@ -1,4 +1,4 @@
-Data_analysis  Published in https://rpubs.com/PameI20/698393  
+Data_analysis
 
 ICCS datasets are analysed, in particular scales
 
@@ -7,7 +7,7 @@ Attitudes toward gender equality and
 Attitudes toward equal rights for immigrants.
 Three cycles of ICCS are considered CIVED 1999/ ICCS 2009/ ICCS 2016.
 
-File 1:
+File 1: https://rpubs.com/PameI20/706641
 
 1-Descriptive Analysis  
 1.1 Barplot of categorical variables  

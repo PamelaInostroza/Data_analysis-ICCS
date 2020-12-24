@@ -20,7 +20,8 @@ File 1: https://rpubs.com/PameI20/706641
 2.4 Invariance (MGCFA) for Gender  
 2.5 Score generation  
 
-File 2:  https://rpubs.com/PameI20/707477
+File 2:  https://rpubs.com/PameI20/707477  
+
 3-Recodification of variables for modelling  
 
 4-Multilevel modelling  
@@ -28,9 +29,8 @@ File 2:  https://rpubs.com/PameI20/707477
 4.2 Two level model  
 
 5- Log linear regression  
-
-6- Ordinal regression
-6- Logistic regression  
+6- Ordinal regression  
+7- Logistic regression  
 
 
 File 3:  

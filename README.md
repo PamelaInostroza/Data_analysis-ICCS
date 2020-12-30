@@ -33,8 +33,16 @@ File 2:  https://rpubs.com/PameI20/707477
 7- Logistic regression  
 
 
-File 3:  
-7-Latent Class Analysis  
+File 3:  https://rpubs.com/PameI20/708766  
+
+7-Latent Class Analysis   
+7.1 By construct and cycle  
+7.2 By cycle, all items, polytomous response  
+7.3 By cycle, all items, binomial response  
+7.4 By cycle, all items, polytomous response, covariate Country  
+7.5 All items, polytomous response, covariate Cycle  
+7.6 All items, polytomous response, covariates Cycle and Country  
+7.7 By Country and By Cycle, all items, polytomous response  
 
 
 

@@ -2,164 +2,193 @@ library(lme4)
 library(lmerTest)
 library(sjPlot)
 
-ds_ml0 <- ISC_lvR %>% 
-  dplyr::select(cycle, IDSCHOOL, COUNTRY, SENWGT, all_of(Indicfa))
-table(ds_ml0$cycle,ds_ml0$COUNTRY)
+#---European countries---
+ds_ml <- ISC_lvR %>% filter(!COUNTRY %in% c(CNTne, CNT2cne)) %>% 
+  dplyr::select(cycle, IDSCHOOL, COUNTRY, SENWGT, all_of(Indicfa), all_of(Man_cate), all_of(Man_cont))
+knitr::kable(table(ds_ml$cycle,ds_ml$COUNTRY), caption = "European countries included in the analysis") %>% print()
 
+
+Man_cate2 <- Man_cate[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cate)]
+Man_cont2 <- Man_cont[!grepl(paste0(c("T_NISB", "T_CITRESP"), collapse = "|"), Man_cont)]
+formReg <- paste0(paste(Man_cate2, collapse = " + "), " + ", paste(Man_cont2, collapse = " + "))
+
+Man_cate3 <- Man_cate2[!grepl(paste0(c("T_HIGHEDEXP", "T_RELIG", "T_PROTES1"), collapse = "|"), Man_cate2)]
+Man_cont3 <- Man_cont2[!grepl(paste0(c("T_NISB", "T_HISEI", "T_PROTES", "T_CNTATT", "T_ELECPART", "T_LEGACT", "T_WIDEPART", "T_CITRESP"), collapse = "|"), Man_cont2)]
+formReg1 <- paste0(paste(Man_cate3, collapse = " + "), " + ", paste(Man_cont3, collapse = " + "))
+
+# attr(ds_ml$Ethn_Equal, "label") <- NULL
+# attr(ds_ml$Gend_Equal, "label") <- NULL
+# attr(ds_ml$Immi_Equal, "label") <- NULL
+attr(ds_ml$Ethn_Equal, "class") <- NULL
+attr(ds_ml$Gend_Equal, "class") <- NULL
+attr(ds_ml$Immi_Equal, "class") <- NULL
+
+#--- Nested in cycles----------
+# -----------------------------#
+##### 2 cycles 2009/2016########
+# -----------------------------#
+ds_ml0 <- ds_ml %>% filter(cycle %in% c("C2", "C3"))
+
+  # Null model 
   L3 <- list()
   for(i in 1:length(Indicfa)){
     form <- as.formula(paste0(Indicfa[i],"~ (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)"))
     L3[[i]] <- lmer(form, data=ds_ml0, weights=SENWGT, REML=FALSE)
   }
-  t1 <- tab_model(L3, collapse.ci = TRUE, p.style = "stars") 
+  t2cNull <- tab_model(L3, collapse.ci = TRUE, p.style = "stars") 
   
-  L2 <- list(GEND = list(), IMMI = list(), ETHN = list())
-  t <- list(GEND = list(), IMMI = list(), ETHN = list())
+  # Model 1
+  Lr3 <- list()
+  for(i in 1:length(Indicfa)){
+    form <- as.formula(paste0(Indicfa[i],"~ ", formReg, "+ (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)"))
+    Lr3[[i]] <- lmer(form, data=ds_ml0, weights=SENWGT, REML=FALSE)
+  }
+  t2cMod1 <- tab_model(Lr3, collapse.ci = TRUE, p.style = "stars")
+  rm(L3, Lr3)
+  
+# -----------------------------#
+###  3 cycles 1999/2009/2016 ###
+# -----------------------------#
+
+  # Null model 
+  L3 <- list()
+  for(i in 1:length(Indicfa)){
+    form <- as.formula(paste0(Indicfa[i],"~ (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)"))
+    L3[[i]] <- lmer(form, data=ds_ml, weights=SENWGT, REML=FALSE)
+  }
+  t3cNull <- tab_model(L3, collapse.ci = TRUE, p.style = "stars") 
+  
+  # Model 1
+  Lr3 <- list()
+  for(i in 1:length(Indicfa)){
+    form <- as.formula(paste0(Indicfa[i],"~ ", formReg1, "+ (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)"))
+    Lr3[[i]] <- lmer(form, data=ds_ml, weights=SENWGT, REML=FALSE)
+  }
+  t3cMod1 <- tab_model(Lr3, collapse.ci = TRUE, p.style = "stars")
+  rm(L3, Lr3)
+  # -----------------------------#
+  ### By cycles 1999/2009/2016 ###
+  # -----------------------------#
+  # Null model 
+  Lr2 <- list(GEND = list(), IMMI = list(), ETHN = list())
+  trNull <- list(GEND = list(), IMMI = list(), ETHN = list())
   for(k in 1:length(Indicfa)){
     for(j in 1:3){
-      form <- as.formula(paste0(Indicfa[k],"~  (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)"))
-      L2[[k]][[j]] <- lmer(form, data=ds_ml0[ds_ml0$cycle == paste0("C",j),], weights=SENWGT, REML=FALSE)
+      if(j==1) form <- as.formula(paste0(Indicfa[k],"~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)"))
+      else form <- as.formula(paste0(Indicfa[k],"~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)"))
+      Lr2[[k]][[j]] <- lmer(form, data=ds_ml[ds_ml$cycle == paste0("C",j),], weights=SENWGT, REML=FALSE)
     }  
-    t[[k]] <- tab_model(L2[[k]], dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                    collapse.ci = TRUE, p.style = "stars")#title = get_label(eval(parse(text=paste0("ds_ml0$",Indicfa[k]))))
+    trNull[[k]] <- tab_model(Lr2[[k]], dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
+                           collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ISC_lvR$",Indicfa[k])))))
   }
-  ########Model 1 ###############
-  ds_ml1 <- ISC_lvR %>%
-    dplyr::select(cycle, COUNTRY, IDSCHOOL, SENWGT, all_of(Indicfa), all_of(Man_cate), all_of(Man_cont)) 
+  rm(Lr2)
+  # Model 1
+  Lr2 <- list(GEND = list(), IMMI = list(), ETHN = list())
+  trMod1 <- list(GEND = list(), IMMI = list(), ETHN = list())
+  for(k in 1:length(Indicfa)){
+    for(j in 1:3){
+      if(j==1) form <- as.formula(paste0(Indicfa[k],"~ ", formReg1, "+ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)"))
+      else form <- as.formula(paste0(Indicfa[k],"~ ", formReg, "+ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)"))
+      Lr2[[k]][[j]] <- lmer(form, data=ds_ml[ds_ml$cycle == paste0("C",j),], weights=SENWGT, REML=FALSE)
+    }  
+    trMod1[[k]] <- tab_model(Lr2[[k]], dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
+                                   collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ISC_lvR$",Indicfa[k])))))
+  }
+  rm(Lr2)
+ ###Non european countries
+  
+  ds_mlne <- ISC_lvR %>% filter(COUNTRY %in% c(CNTne, CNT2cne)) %>% 
+    dplyr::select(cycle, IDSCHOOL, COUNTRY, SENWGT, all_of(Indicfa), all_of(Man_cate), all_of(Man_cont))
+  knitr::kable(table(ds_mlne$cycle,ds_mlne$COUNTRY), caption = "Non-European countries included in the analysis") %>% print()
+  
   
   Man_cate2 <- Man_cate[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cate)]
   Man_cont2 <- Man_cont[!grepl(paste0(c("T_NISB", "T_CITRESP"), collapse = "|"), Man_cont)]
-  
   formReg <- paste0(paste(Man_cate2, collapse = " + "), " + ", paste(Man_cont2, collapse = " + "))
   
   Man_cate3 <- Man_cate2[!grepl(paste0(c("T_HIGHEDEXP", "T_RELIG", "T_PROTES1"), collapse = "|"), Man_cate2)]
   Man_cont3 <- Man_cont2[!grepl(paste0(c("T_NISB", "T_HISEI", "T_PROTES", "T_CNTATT", "T_ELECPART", "T_LEGACT", "T_WIDEPART", "T_CITRESP"), collapse = "|"), Man_cont2)]
   formReg1 <- paste0(paste(Man_cate3, collapse = " + "), " + ", paste(Man_cont3, collapse = " + "))
   
-  Lr3 <- list()
-  for(i in 1:length(Indicfa)){
-    form <- as.formula(paste0(Indicfa[i],"~ ", formReg, "+ (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)"))
-    Lr3[[i]] <- lmer(form, data=ds_ml1, weights=SENWGT, REML=FALSE)
-  }
-  tr1 <- tab_model(Lr3, collapse.ci = TRUE, p.style = "stars")
+  # attr(ds_mlne$Ethn_Equal, "label") <- NULL
+  # attr(ds_mlne$Gend_Equal, "label") <- NULL
+  # attr(ds_mlne$Immi_Equal, "label") <- NULL
+  # 
+  attr(ds_mlne$Ethn_Equal, "class") <- NULL
+  attr(ds_mlne$Gend_Equal, "class") <- NULL
+  attr(ds_mlne$Immi_Equal, "class") <- NULL
   
+  #--- Nested in cycles----------
+  # -----------------------------#
+  ##### 2 cycles 2009/2016########
+  # -----------------------------#
+  ds_mlne0 <- ds_mlne %>% filter(cycle %in% c("C2", "C3")) 
+  
+  Indicfane <- Indicfa[!grepl("Immi_Equal", Indicfa)]
+  # Null model 
+  L3 <- list()
+  for(i in 1:length(Indicfane)){
+    form <- as.formula(paste0(Indicfane[i],"~ (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)"))
+    L3[[i]] <- lmer(form, data=ds_mlne0, weights=SENWGT, REML=FALSE)
+  }
+  Nt2cNull <- tab_model(L3, collapse.ci = TRUE, p.style = "stars") 
+  
+  # Model 1
+  Lr3 <- list()
+  for(i in 1:length(Indicfane)){
+    form <- as.formula(paste0(Indicfane[i],"~ ", formReg, "+ (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)"))
+    Lr3[[i]] <- lmer(form, data=ds_mlne0, weights=SENWGT, REML=FALSE)
+  }
+  Nt2cMod1 <- tab_model(Lr3, collapse.ci = TRUE, p.style = "stars")
+  rm(L3, Lr3)
+  
+  # -----------------------------#
+  ###  3 cycles 1999/2009/2016 ###
+  # -----------------------------#
+  
+  # Null model 
+  L3 <- list()
+  for(i in 1:length(Indicfane)){
+    form <- as.formula(paste0(Indicfane[i],"~ (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)"))
+    L3[[i]] <- lmer(form, data=ds_mlne, weights=SENWGT, REML=FALSE)
+  }
+  Nt3cNull <- tab_model(L3, collapse.ci = TRUE, p.style = "stars") 
+  
+  # Model 1
+  Lr3 <- list()
+  for(i in 1:length(Indicfane)){
+    form <- as.formula(paste0(Indicfane[i],"~ ", formReg1, "+ (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)"))
+    Lr3[[i]] <- lmer(form, data=ds_mlne, weights=SENWGT, REML=FALSE)
+  }
+  Nt3cMod1 <- tab_model(Lr3, collapse.ci = TRUE, p.style = "stars")
+  rm(L3, Lr3)
+  # -----------------------------#
+  ### By cycles 1999/2009/2016 ###
+  # -----------------------------#
+  # Null model 
   Lr2 <- list(GEND = list(), IMMI = list(), ETHN = list())
-  tr <- list(GEND = list(), IMMI = list(), ETHN = list())
+  NtrNull <- list(GEND = list(), IMMI = list(), ETHN = list())
   for(k in 1:length(Indicfa)){
-    for(j in 1:3){
+    if(Indicfa[k] == "Immi_Equal") {t <- 1:2; dv <- c("CIVED 1999", "ICCS 2009")}else {t <- 1:3; dv <-c("CIVED 1999", "ICCS 2009", "ICCS 2016")}
+    for(j in t){
+      form <- as.formula(paste0(Indicfa[k],"~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)"))
+      Lr2[[k]][[j]] <- lmer(form, data=ds_mlne[ds_mlne$cycle == paste0("C",j),], weights=SENWGT, REML=FALSE)
+    }  
+    NtrNull[[k]] <- tab_model(Lr2[[k]], dv.labels = dv,
+                             collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ISC_lvR$",Indicfa[k])))))
+  }
+  rm(Lr2)
+  # Model 1
+  Lr2 <- list(GEND = list(), IMMI = list(), ETHN = list())
+  NtrMod1 <- list(GEND = list(), IMMI = list(), ETHN = list())
+  for(k in 1:length(Indicfa)){
+    if(Indicfa[k] == "Immi_Equal") {t <- 1:2; dv <- c("CIVED 1999", "ICCS 2009")}else {t <- 1:3; dv <-c("CIVED 1999", "ICCS 2009", "ICCS 2016")}
+    for(j in t){
       if(j==1) form <- as.formula(paste0(Indicfa[k],"~ ", formReg1, "+ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)"))
       else form <- as.formula(paste0(Indicfa[k],"~ ", formReg, "+ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)"))
-      Lr2[[k]][[j]] <- lmer(form, data=ds_ml1[ds_ml1$cycle == paste0("C",j),], weights=SENWGT, REML=FALSE)
+      Lr2[[k]][[j]] <- lmer(form, data=ds_mlne[ds_mlne$cycle == paste0("C",j),], weights=SENWGT, REML=FALSE)
     }  
-    tr[[k]] <- tab_model(Lr2[[k]], dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                                   collapse.ci = TRUE, p.style = "stars")#title = get_label(eval(parse(text=paste0("ds_ml1$",Indicfa[k]))))
+    NtrMod1[[k]] <- tab_model(Lr2[[k]], dv.labels = dv,
+                             collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ISC_lvR$",Indicfa[k])))))
   }
-#     ###########################################################
-#     if(length(Indicfa) == 3){
-#   L3NullImmi <- lmer(Immi_Equal ~  (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL), 
-#                      data=ds_ml0, weights=SENWGT, REML=FALSE)
-#   L3NullGndr <- lmer(Gend_Equal ~  (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL), 
-#                      data=ds_ml0, weights=SENWGT, REML=FALSE)
-#   L3NullEthn <- lmer(Ethn_Equal ~  (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL), 
-#                      data=ds_ml0, weights=SENWGT, REML=FALSE)
-#   t1 <- tab_model(L3NullImmi, L3NullGndr, L3NullEthn, collapse.ci = TRUE, p.style = "stars")
-#   
-#   L2NullImmiC1 <- lmer(Immi_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
-#                        data=ds_ml0[ds_ml0$cycle == "C1",], weights=SENWGT,  REML=FALSE)
-#   L2NullImmiC2 <- lmer(Immi_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
-#                        data=ds_ml0[ds_ml0$cycle == "C2",], weights=SENWGT,  REML=FALSE)
-#   L2NullImmiC3 <- lmer(Immi_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
-#                        data=ds_ml0[ds_ml0$cycle == "C3",], weights=SENWGT,  REML=FALSE)
-#   
-#   L2NullGndrC1 <- lmer(Gend_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
-#                        data=ds_ml0[ds_ml0$cycle == "C1",], weights=SENWGT,  REML=FALSE)
-#   L2NullGndrC2 <- lmer(Gend_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
-#                        data=ds_ml0[ds_ml0$cycle == "C2",], weights=SENWGT,  REML=FALSE)
-#   L2NullGndrC3 <- lmer(Gend_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
-#                        data=ds_ml0[ds_ml0$cycle == "C3",], weights=SENWGT,  REML=FALSE)
-#   
-#   L2NullEthnC1 <- lmer(Ethn_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
-#                        data=ds_ml0[ds_ml0$cycle == "C1",], weights=SENWGT,  REML=FALSE)
-#   L2NullEthnC2 <- lmer(Ethn_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
-#                        data=ds_ml0[ds_ml0$cycle == "C2",], weights=SENWGT,  REML=FALSE)
-#   L2NullEthnC3 <- lmer(Ethn_Equal ~ (1|COUNTRY) + (1|COUNTRY:IDSCHOOL),
-#                        data=ds_ml0[ds_ml0$cycle == "C3",], weights=SENWGT,  REML=FALSE)
-#   
-#   
-#   t2 <- tab_model(L2NullImmiC1, L2NullImmiC2, L2NullImmiC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-#                   collapse.ci = TRUE, p.style = "stars",
-#                   title = "Attitudes toward equal rights for immigrants")
-#   
-#   t3 <- tab_model(L2NullGndrC1, L2NullGndrC2, L2NullGndrC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-#                   collapse.ci = TRUE, p.style = "stars",
-#                   title = "Attitudes toward gender equality")
-#   
-#   t4 <- tab_model(L2NullEthnC1, L2NullEthnC2, L2NullEthnC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-#                   collapse.ci = TRUE, p.style = "stars",
-#                   title = "Attitudes toward equal rights for all ethnic/racial groups")
-#   
-#   
-#   ########Model 1 ###############
-#   ds_ml1 <- ISC_lvR %>%
-#     dplyr::select(cycle, COUNTRY, IDSCHOOL, SENWGT, all_of(Indicfa), all_of(Man_cate), all_of(Man_cont)) 
-#   
-#   Man_cate2 <- Man_cate[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cate)]
-#   Man_cont2 <- Man_cont[!grepl(paste0(c("T_NISB", "T_CITRESP"), collapse = "|"), Man_cont)]
-#   
-#   form <- paste0(paste(Man_cate2, collapse = " + "), " + ", paste(Man_cont2, collapse = " + "))
-#   
-#   L3M1Immi <- lmer(as.formula(paste("Immi_Equal ~", form, " +
-#                    (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)")),
-#                    data=ds_ml1, weights=SENWGT, REML=FALSE)
-#   L3M1Gndr <- lmer(as.formula(paste("Gend_Equal ~", form, " +
-#                     (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)")),
-#                    data=ds_ml1, weights=SENWGT, REML=FALSE)
-#   L3M1Ethn <- lmer(as.formula(paste("Ethn_Equal ~", form, " +
-#                     (1|cycle) + (1|cycle:COUNTRY) + (1|cycle:COUNTRY:IDSCHOOL)")),
-#                    data=ds_ml1, weights=SENWGT, REML=FALSE)
-#   t5 <- tab_model(L3M1Immi, L3M1Gndr, L3M1Ethn, collapse.ci = TRUE, p.style = "stars")
-#   
-#   Man_cate3 <- Man_cate2[!grepl(paste0(c("T_HIGHEDEXP", "T_RELIG", "T_PROTES1"), collapse = "|"), Man_cate2)]
-#   Man_cont3 <- Man_cont2[!grepl(paste0(c("T_NISB", "T_HISEI", "T_PROTES", "T_CNTATT", "T_ELECPART", "T_LEGACT", "T_WIDEPART", "T_CITRESP"), collapse = "|"), Man_cont2)]
-#   form1 <- paste0(paste(Man_cate3, collapse = " + "), " + ", paste(Man_cont3, collapse = " + "))
-#   
-#   L2M1ImmiC1 <- lmer(as.formula(paste("Immi_Equal ~ ", form1, " +
-#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)")),
-#                      data=ds_ml1[ds_ml1$cycle == "C1",], weights=SENWGT,  REML=FALSE)
-#   L2M1ImmiC2 <- lmer(as.formula(paste("Immi_Equal ~ ", form, " +
-#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)")),
-#                      data=ds_ml1[ds_ml1$cycle == "C2",], weights=SENWGT,  REML=FALSE)
-#   L2M1ImmiC3 <- lmer(as.formula(paste("Immi_Equal ~ ", form, " +
-#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)")),
-#                      data=ds_ml1[ds_ml1$cycle == "C3",], weights=SENWGT,  REML=FALSE)
-#   
-#   L2M1GndrC1 <- lmer(as.formula(paste("Gend_Equal ~ ", form1, " +
-#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)")),
-#                      data=ds_ml1[ds_ml1$cycle == "C1",], weights=SENWGT,  REML=FALSE)
-#   L2M1GndrC2 <- lmer(as.formula(paste("Gend_Equal ~ ", form, " +
-#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)")),
-#                      data=ds_ml1[ds_ml1$cycle == "C2",], weights=SENWGT,  REML=FALSE)
-#   L2M1GndrC3 <- lmer(as.formula(paste("Gend_Equal ~ ", form, " +
-#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)")),
-#                      data=ds_ml1[ds_ml1$cycle == "C3",], weights=SENWGT,  REML=FALSE)
-#   
-#   L2M1EthnC1 <- lmer(as.formula(paste("Ethn_Equal ~ ", form1, " +
-#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)")),
-#                      data=ds_ml1[ds_ml1$cycle == "C1",], weights=SENWGT,  REML=FALSE)
-#   L2M1EthnC2 <- lmer(as.formula(paste("Ethn_Equal ~ ", form, " +
-#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)")),
-#                      data=ds_ml1[ds_ml1$cycle == "C2",], weights=SENWGT,  REML=FALSE)
-#   L2M1EthnC3 <- lmer(as.formula(paste("Ethn_Equal ~ ", form, " +
-#                         (1|COUNTRY) + (1|COUNTRY:IDSCHOOL)")),
-#                      data=ds_ml1[ds_ml1$cycle == "C3",], weights=SENWGT,  REML=FALSE)
-#   
-#   b11 <- tab_model(L2M1ImmiC1, L2M1ImmiC2, L2M1ImmiC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-#                    collapse.ci = TRUE, p.style = "stars",
-#                    title = "Attitudes toward equal rights for immigrants ")
-#   b21 <- tab_model(L2M1GndrC1, L2M1GndrC2, L2M1GndrC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-#                    collapse.ci = TRUE, p.style = "stars",
-#                    title = "Attitudes toward gender equality")
-#   b31 <- tab_model(L2M1EthnC1, L2M1EthnC2, L2M1EthnC3, dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-#                    collapse.ci = TRUE, p.style = "stars",
-#                    title = "Attitudes toward equal rights for all ethnic/racial groups")
-# }
+  rm(Lr2)

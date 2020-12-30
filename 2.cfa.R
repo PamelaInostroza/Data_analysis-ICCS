@@ -678,10 +678,9 @@ cat('  \n')
 
 pall <- plyr::rbind.fill(p99, p09, p16)
 ISC_cfa <- left_join(ISC_cfa, pall, by = all_of(Id)) 
-set_label(ISC_cfa$Gend_Equal) <- c("Attitudes towards Gender equality")
-set_label(ISC_cfa$Immi_Equal) <- c("Attitudes towards Immigrants rights")
-set_label(ISC_cfa$Ethn_Equal) <- c("Attitudes towards Minorities rights")
-
+set_label(ISC_cfa$Gend_Equal) <- "Positive attitudes toward gender equality"
+set_label(ISC_cfa$Immi_Equal) <- "Positive attitudes toward equal rights for immigrants"
+set_label(ISC_cfa$Ethn_Equal) <- "Positive attitudes toward equal rights for ethnic/racial groups"
 
 mg <- ISC_cfa %>% dplyr::select(cycle, all_of(Newscales)) %>% group_by(cycle) %>% 
   summarise_at(Newscales, list(~ mean(., na.rm = TRUE))) %>% 

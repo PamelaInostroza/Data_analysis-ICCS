@@ -1,11 +1,12 @@
 Data_analysis
 
-ICCS datasets are analysed, in particular scales
+ICCS datasets are analysed, in particular scales:  
 
-Attitudes toward equal rights for all ethnic/racial groups,
-Attitudes toward gender equality and
-Attitudes toward equal rights for immigrants.
-Three cycles of ICCS are considered CIVED 1999/ ICCS 2009/ ICCS 2016.
+Attitudes toward equal rights for all ethnic/racial groups,  
+Attitudes toward gender equality and  
+Attitudes toward equal rights for immigrants.  
+
+Three cycles of ICCS are considered CIVED 1999/ ICCS 2009/ ICCS 2016.  
 
 File 1: https://rpubs.com/PameI20/706641
 

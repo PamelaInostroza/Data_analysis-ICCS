@@ -3,17 +3,19 @@ library(jtools)
 
 options(survey.lonely.psu="adjust")
 
-ds_ll0 <- ISC_lvR %>% 
+#-------European ------
+
+ds_ll0 <- ISC_lvR %>% filter(!COUNTRY %in% c(CNTne, CNT2cne)) %>% 
   dplyr::select(all_of(Id), all_of(sampleID), all_of(Scales), all_of(Scalesb), all_of(Man_cate), all_of(Man_cont)) 
 
-Man_cate2 <- Man_cate[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cate)]
-Man_cont2 <- Man_cont[!grepl(paste0(c("T_NISB"), collapse = "|"), Man_cont)]
+Man_cateSignf <- Man_cate[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cate)]
 
-form <- paste0(paste(Man_cate2, collapse = " + "), " + ", paste(Man_cont2, collapse = " + "))
-
-Man_cateC1 <- Man_cate[!grepl(paste0(c("T_HIGHEDEXP", "T_HIGHEDFA", "T_RELIG", "T_HISCED"), collapse = "|"), Man_cate)]
-Man_contC1 <- Man_cont[!grepl(paste0(c("T_HISEI", "T_NISB", "T_PROTES"), collapse = "|"), Man_cont)]
-formC1 <- paste0(paste(Man_cateC1, collapse = " + "), " + ", paste(Man_contC1, collapse = " + "))
+#Selection of variables to be used in models for availability
+Man_cateC2C3 <- Man_cateSignf[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cateSignf)]
+form <- paste0(paste(Man_cateC2C3, collapse = " + "))
+#Special selection for cycle 1 for availability
+Man_cateC1 <- Man_cateSignf[!grepl(paste0(c("T_HIGHEDEXP", "T_RELIG", "T_HISCED", "T_PROTES1"), collapse = "|"), Man_cateSignf)]
+formC1 <- paste0(paste(Man_cateC1, collapse = " + "))
 
 survey.designC1 <- svydesign(ids = ~IDCL, weights = ~SENWGT, data=ds_ll0[ds_ll0$cycle == "C1",], strata = ~IDJK, nest = TRUE)
 survey.designC2 <- svydesign(ids = ~IDCL, weights = ~SENWGT, data=ds_ll0[ds_ll0$cycle == "C2",], strata = ~IDJK, nest = TRUE)
@@ -22,357 +24,265 @@ survey.designC3 <- svydesign(ids = ~IDCL, weights = ~SENWGT, data=ds_ll0[ds_ll0$
 ###########################################################
 #############Log linear regression / Poisson ###############
 ###########################################################
-logl_IMMIEQ1C1 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ1) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C1",], family = poisson, design = survey.designC1)
-logl_IMMIEQ1C2 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ1) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_IMMIEQ1C3 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ1) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll11 <- tab_model(logl_IMMIEQ1C1, logl_IMMIEQ1C2, logl_IMMIEQ1C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_IMMIEQ1)$label, "Moving/<Immigrants> ")))
-#plot_summs(logl_IMMIEQ1C1, logl_IMMIEQ1C2, logl_IMMIEQ1C3, scale = TRUE, exp = TRUE)
 
-logl_IMMIEQ2C1 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ2) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C1",], family = poisson, design = survey.designC1)
-logl_IMMIEQ2C2 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ2) ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_IMMIEQ2C3 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ2) ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll12 <- tab_model(logl_IMMIEQ2C1, logl_IMMIEQ2C2, logl_IMMIEQ2C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_IMMIEQ2)$label, "Moving/<Immigrants> ")))
+logl <- vector(mode = 'list', length = length(Scales))
+Tlogl <- vector(mode = 'list', length = length(Scales))
+for(i in 1:length(Scales)){
+   if(Scales[i] == "T_ETHNEQ5") {t <- 2:3; dv <- c( "ICCS 2009", "ICCS 2016")}
+   else {t <- 1:3; dv <- c("CIVED 1999", "ICCS 2009", "ICCS 2016")}
+    for (j in t) {
+      if(j==1) {
+         form <- formC1
+         Survey.design = survey.designC1
+      } else if(j==2) {
+         form <- form
+         Survey.design = survey.designC2
+      } else if(j==3) {
+         form <- form
+         Survey.design = survey.designC3
+      }
+      logl[[i]][[j]] <- svyglm(as.formula(paste("as.numeric(",Scales[i],") ~", form )), 
+                          data = ds_ll0[ds_ll0$cycle == paste0("C",j),], family = poisson, design = Survey.design)  
+    }
+   if (Scales[i] == "T_ETHNEQ5") Tlogl[[i]] <- tab_model(logl[[i]][[2]],logl[[i]][[3]], dv.labels = dv,
+                                                         collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ds_ll0$",Scales[i])))))
+   else Tlogl[[i]] <- tab_model(logl[[i]], dv.labels = dv,
+                            collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ds_ll0$",Scales[i])))))
+   names(Tlogl)[[i]] <- Scales[i]
+}
+rm(logl)
+###########################################################
+#############     Ordinal regression  #####################
+###########################################################
 
-logl_IMMIEQ3C1 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ3) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C1",], family = poisson, design = survey.designC1)
-logl_IMMIEQ3C2 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ3) ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_IMMIEQ3C3 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ3) ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll13 <- tab_model(logl_IMMIEQ3C1, logl_IMMIEQ3C2, logl_IMMIEQ3C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_IMMIEQ3)$label, "Moving/<Immigrants> ")))
+ordl <- vector(mode = 'list', length = length(Scales))
+Tordl <- list()
+for(i in 1:length(Scales)){
+   if(Scales[i] == "T_ETHNEQ5") {t <- 2:3; dv <- c( "ICCS 2009", "ICCS 2016")}
+   else {t <- 1:3; dv <- c("CIVED 1999", "ICCS 2009", "ICCS 2016")}
+   for (j in t) {
+      if(j==1) {
+         form <- formC1
+         Survey.design = survey.designC1
+      } else if(j==2) {
+         form <- form
+         Survey.design = survey.designC2
+      } else if(j==3) {
+         form <- form
+         Survey.design = survey.designC3
+      }
+      
+      ordl[[i]][[j]] <- svyolr(as.formula(paste(Scales[i], "~", form )), design = Survey.design)  
+   }
+   if (Scales[i] == "T_ETHNEQ5") Tordl[[i]] <- tab_model(ordl[[i]][[2]],ordl[[i]][[3]], dv.labels = dv,
+                                                         collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ds_ll0$",Scales[i])))))
+   else Tordl[[i]] <- tab_model(ordl[[i]], dv.labels = dv,
+                           collapse.ci = TRUE, p.style = "stars", title = str_remove(sjlabelled::get_label(eval(parse(text=paste0("ds_ll0$",Scales[i])))), "Moving/|<|>|Rights and Responsibilities/|Roles women and men/"))
+   names(Tordl)[[i]] <- Scales[i]
+}
+rm(ordl)
+##############################################################
+###################Logistic regression########################
+##############################################################
 
-logl_IMMIEQ4C1 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ4) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C1",], family = poisson, design = survey.designC1)
-logl_IMMIEQ4C2 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ4) ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_IMMIEQ4C3 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ4) ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll14 <- tab_model(logl_IMMIEQ4C1, logl_IMMIEQ4C2, logl_IMMIEQ4C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_IMMIEQ4)$label, "Moving/<Immigrants> ")))
+logit <- vector(mode = 'list', length = length(Scalesb))
+Tlogit <- list()
+for(i in 1:length(Scalesb)){
+   if(Scalesb[i] == "bT_ETHNEQ5") {t <- 2:3; dv <- c( "ICCS 2009", "ICCS 2016")}
+   else {t <- 1:3; dv <- c("CIVED 1999", "ICCS 2009", "ICCS 2016")}
+   for (j in t) {
+      if(j==1) {
+         form <- formC1
+         Survey.design = survey.designC1
+      } else if(j==2) {
+         form <- form
+         Survey.design = survey.designC2
+      } else if(j==3) {
+         form <- form
+         Survey.design = survey.designC3
+      }
+      
+      logit[[i]][[j]] <- svyglm(as.formula(paste(Scalesb[i], "~", form )),  
+                               data = ds_ll0[ds_ll0$cycle == paste0("C",j),], family = binomial, design = Survey.design)  
+   }
+   if (Scalesb[i] == "bT_ETHNEQ5") Tlogit[[i]] <- tab_model(logit[[i]][[2]],logit[[i]][[3]], dv.labels = dv,
+                                                         collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ds_ll0$",Scales[i])))))
+   else Tlogit[[i]] <- tab_model(logit[[i]], dv.labels = dv,
+                           collapse.ci = TRUE, p.style = "stars", title = str_remove(sjlabelled::get_label(eval(parse(text=paste0("ds_ll0$",Scales[i])))), "Moving/|<|>|Rights and Responsibilities/|Roles women and men/"))
+   names(Tlogit)[[i]] <- Scalesb[i]
+}
+rm(logit)
+#-------Non European ------
 
-logl_IMMIEQ5C1 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ5) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C1",], family = poisson, design = survey.designC1)
-logl_IMMIEQ5C2 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ5) ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_IMMIEQ5C3 <- svyglm(as.formula(paste("as.numeric(T_IMMIEQ5) ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll15 <- tab_model(logl_IMMIEQ5C1, logl_IMMIEQ5C2, logl_IMMIEQ5C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_IMMIEQ5)$label, "Moving/<Immigrants> ")))
+ds_ll0ne <- ISC_lvR %>% filter(COUNTRY %in% c(CNTne, CNT2cne)) %>% 
+   dplyr::select(all_of(Id), all_of(sampleID), all_of(Scales), all_of(Scalesb), all_of(Man_cate), all_of(Man_cont)) 
 
+Man_cateSignf <- Man_cate[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cate)]
 
-logl_GNDREQ1C1 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ1) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C1",], family = poisson, design = survey.designC1)
-logl_GNDREQ1C2 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ1) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_GNDREQ1C3 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ1) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll21 <- tab_model(logl_GNDREQ1C1, logl_GNDREQ1C2, logl_GNDREQ1C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ1)$label, "Rights and Responsibilities/Roles women and men/")))
+#Selection of variables to be used in models for availability
+Man_cateC2C3 <- Man_cateSignf[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cateSignf)]
+form <- paste0(paste(Man_cateC2C3, collapse = " + "))
+#Special selection for cycle 1 for availability
+Man_cateC1 <- Man_cateSignf[!grepl(paste0(c("T_HIGHEDEXP", "T_RELIG", "T_HISCED", "T_PROTES1"), collapse = "|"), Man_cateSignf)]
+formC1 <- paste0(paste(Man_cateC1, collapse = " + "))
+ScalesNe <- Scales
+survey.designC1 <- svydesign(ids = ~IDCL, weights = ~SENWGT, data=ds_ll0ne[ds_ll0ne$cycle == "C1",], strata = ~IDJK, nest = TRUE)
+survey.designC2 <- svydesign(ids = ~IDCL, weights = ~SENWGT, data=ds_ll0ne[ds_ll0ne$cycle == "C2",], strata = ~IDJK, nest = TRUE)
+survey.designC3 <- svydesign(ids = ~IDCL, weights = ~SENWGT, data=ds_ll0ne[ds_ll0ne$cycle == "C3",], strata = ~IDJK, nest = TRUE)
 
-logl_GNDREQ2C1 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ2) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C1",], family = poisson, design = survey.designC1)
-logl_GNDREQ2C2 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ2) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_GNDREQ2C3 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ2) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll22 <- tab_model(logl_GNDREQ2C1, logl_GNDREQ2C2, logl_GNDREQ2C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ2)$label, "Rights and Responsibilities/Roles women and men/")))
+###########################################################
+#############Log linear regression / Poisson ###############
+###########################################################
 
-logl_GNDREQ3C1 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ3) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C1",], family = poisson, design = survey.designC1)
-logl_GNDREQ3C2 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ3) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_GNDREQ3C3 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ3) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll23 <- tab_model(logl_GNDREQ3C1, logl_GNDREQ3C2, logl_GNDREQ3C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ3)$label, "Rights and Responsibilities/Roles women and men/")))
+Nelogl <- vector(mode = 'list', length = length(ScalesNe))
+NeTlogl <- list()
+for(i in 1:length(ScalesNe)){
+   if(ScalesNe[i] == "T_ETHNEQ5") {t <- 2:3; dv <- c( "ICCS 2009", "ICCS 2016")} else {
+      t <- 1:3; dv <- c("CIVED 1999", "ICCS 2009", "ICCS 2016")
+      if(grepl("T_IMMIEQ[1-9]",ScalesNe[i])) {t <- 1:2; dv <- c("CIVED 1999", "ICCS 2009")} else {t <- 1:3; dv <-c("CIVED 1999", "ICCS 2009", "ICCS 2016")}
+   }
+   for (j in t) {
+      if(j==1) {
+         form <- formC1
+         Survey.design = survey.designC1
+      } else if(j==2) {
+         form <- form
+         Survey.design = survey.designC2
+      } else if(j==3) {
+         form <- form
+         Survey.design = survey.designC3
+      }
+      
+      Nelogl[[i]][[j]] <- svyglm(as.formula(paste("as.numeric(",ScalesNe[i],") ~", form )), 
+                               data = ds_ll0ne[ds_ll0ne$cycle == paste0("C",j),], family = poisson, design = Survey.design)  
+   }
+   if (ScalesNe[i] == "T_ETHNEQ5") NeTlogl[[i]] <- tab_model(Nelogl[[i]][[2]],Nelogl[[i]][[3]], dv.labels = dv,
+                                                         collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ds_ll0ne$",ScalesNe[i]))))) else NeTlogl[[i]] <- tab_model(Nelogl[[i]], dv.labels = dv,
+                           collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ds_ll0ne$",ScalesNe[i])))))
+   names(NeTlogl)[[i]] <- ScalesNe[i]
+}
+rm(Nelogl)
+###########################################################
+#############     Ordinal regression  #####################
+###########################################################
 
-logl_GNDREQ4C1 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ4) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C1",], family = poisson, design = survey.designC1)
-logl_GNDREQ4C2 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ4) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_GNDREQ4C3 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ4) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll24 <- tab_model(logl_GNDREQ4C1, logl_GNDREQ4C2, logl_GNDREQ4C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ4)$label, "Rights and Responsibilities/Roles women and men/")))
-
-logl_GNDREQ5C1 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ5) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C1",], family = poisson, design = survey.designC1)
-logl_GNDREQ5C2 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ5) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_GNDREQ5C3 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ5) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll25 <- tab_model(logl_GNDREQ5C1, logl_GNDREQ5C2, logl_GNDREQ5C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ5)$label, "Rights and Responsibilities/Roles women and men/")))
-
-logl_GNDREQ6C1 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ6) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C1",], family = poisson, design = survey.designC1)
-logl_GNDREQ6C2 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ6) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_GNDREQ6C3 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ6) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll26 <- tab_model(logl_GNDREQ6C1, logl_GNDREQ6C2, logl_GNDREQ6C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ6)$label, "Rights and Responsibilities/Roles women and men/")))
-
-logl_GNDREQ7C3 <- svyglm(as.formula(paste("as.numeric(T_GNDREQ7) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C3",], family = poisson, design = survey.designC3)
-ll27 <- tab_model(logl_GNDREQ7C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ7)$label, "Rights and Responsibilities/Roles women and men/")))
-
-
-logl_ETHNEQ1C1 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ1) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC1)
-logl_ETHNEQ1C2 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ1) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_ETHNEQ1C3 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ1) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC3)
-ll31 <- tab_model(logl_ETHNEQ1C1, logl_ETHNEQ1C2, logl_ETHNEQ1C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_ETHNEQ1)$label, "Rights and Responsibilities/Rights and responsibilities/")))
-
-logl_ETHNEQ2C1 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ2) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC1)
-logl_ETHNEQ2C2 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ2) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_ETHNEQ2C3 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ2) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC3)
-ll32 <- tab_model(logl_ETHNEQ2C1, logl_ETHNEQ2C2, logl_ETHNEQ2C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_ETHNEQ2)$label, "Rights and Responsibilities/Rights and responsibilities/")))
-
-logl_ETHNEQ3C1 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ3) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC1)
-logl_ETHNEQ3C2 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ3) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_ETHNEQ3C3 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ3) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC3)
-ll33 <- tab_model(logl_ETHNEQ3C1, logl_ETHNEQ3C2, logl_ETHNEQ3C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_ETHNEQ3)$label, "Rights and Responsibilities/Rights and responsibilities/")))
-
-logl_ETHNEQ4C1 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ4) ~", formC1 )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC1)
-logl_ETHNEQ4C2 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ4) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_ETHNEQ4C3 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ4) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC3)
-ll34 <- tab_model(logl_ETHNEQ4C1, logl_ETHNEQ4C2, logl_ETHNEQ4C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_ETHNEQ4)$label, "Rights and Responsibilities/Rights and responsibilities/")))
-
-logl_ETHNEQ5C2 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ5) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC2)
-logl_ETHNEQ5C3 <- svyglm(as.formula(paste("as.numeric(T_ETHNEQ5) ~", form )), 
-                    data = ds_ll0[ds_ll0$cycle == "C2",], family = poisson, design = survey.designC3)
-ll35 <- tab_model(logl_ETHNEQ5C2, logl_ETHNEQ5C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_ETHNEQ5)$label, "Rights and Responsibilities/Rights and responsibilities/")))
-rm(logl_IMMIEQ5C3,logl_IMMIEQ5C2,logl_IMMIEQ5C1,logl_IMMIEQ4C3,logl_IMMIEQ4C2,logl_IMMIEQ4C1,logl_IMMIEQ3C3,logl_IMMIEQ3C2,logl_IMMIEQ3C1,
-   logl_IMMIEQ2C3,logl_IMMIEQ2C2,logl_IMMIEQ2C1,logl_IMMIEQ1C3,logl_IMMIEQ1C2,logl_IMMIEQ1C1,
-   logl_ETHNEQ5C3,logl_ETHNEQ5C2,logl_ETHNEQ4C3,logl_ETHNEQ4C2,logl_ETHNEQ4C1,logl_ETHNEQ3C3,logl_ETHNEQ3C2,logl_ETHNEQ3C1,
-   logl_ETHNEQ2C3,logl_ETHNEQ2C2,logl_ETHNEQ2C1,logl_ETHNEQ1C3,logl_ETHNEQ1C2,logl_ETHNEQ1C1,
-   logl_GNDREQ7C3,logl_GNDREQ6C3,logl_GNDREQ6C2,logl_GNDREQ6C1,logl_GNDREQ5C3,logl_GNDREQ5C2,logl_GNDREQ5C1,logl_GNDREQ4C3,logl_GNDREQ4C2,logl_GNDREQ4C1,logl_GNDREQ3C3,logl_GNDREQ3C2,logl_GNDREQ3C1,
-   logl_GNDREQ2C3,logl_GNDREQ2C2,logl_GNDREQ2C1,logl_GNDREQ1C3,logl_GNDREQ1C2,logl_GNDREQ1C1)
+Neordl <- vector(mode = 'list', length = length(ScalesNe))
+NeTordl <- list()
+for(k in 1:length(ScalesNe)){
+   if(ScalesNe[k] == "T_ETHNEQ5") {
+      t <- 2:3 
+      dv <- c( "ICCS 2009", "ICCS 2016")} else {
+      t <- 1:3 
+      dv <- c("CIVED 1999", "ICCS 2009", "ICCS 2016")
+      if(grepl("T_IMMIEQ[1-9]",ScalesNe[k])) {t <- 1:2; dv <- c("CIVED 1999", "ICCS 2009")} else {
+         t <- 1:3; dv <-c("CIVED 1999", "ICCS 2009", "ICCS 2016")}
+      }
+   for (j in t) {
+      if(j==1) {
+         form <- formC1
+         Survey.design = survey.designC1
+      } else if(j==2) {
+         form <- form
+         Survey.design = survey.designC2
+      } else if(j==3) {
+         form <- form
+         Survey.design = survey.designC3
+      }
+      
+      Neordl[[k]][[j]] <- svyolr(as.formula(paste(ScalesNe[k], "~", form )), design = Survey.design)  
+   }
+   if (ScalesNe[k] == "T_ETHNEQ5") NeTordl[[k]] <- tab_model(Neordl[[k]][[2]],Neordl[[k]][[3]], dv.labels = dv,
+                                                           collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ds_ll0ne$",ScalesNe[k])))))
+   else NeTordl[[k]] <- tab_model(Neordl[[k]], dv.labels = dv,
+                           collapse.ci = TRUE, p.style = "stars", title = str_remove(sjlabelled::get_label(eval(parse(text=paste0("ds_ll0ne$",ScalesNe[k])))), "Moving/|<|>|Rights and Responsibilities/|Roles women and men/"))
+   names(NeTordl)[[k]] <- ScalesNe[k]
+}
+rm(Neordl)
+##############################################################
+###################Logistic regression########################
+##############################################################
+ScalesNeb <- Scalesb
+Nelogit <- vector(mode = 'list', length = length(ScalesNeb))
+NeTlogit <- list()
+for(i in 1:length(ScalesNeb)){
+   if(ScalesNeb[i] == "bT_ETHNEQ5") {t <- 2:3; dv <- c( "ICCS 2009", "ICCS 2016")}
+   else {t <- 1:3; dv <- c("CIVED 1999", "ICCS 2009", "ICCS 2016")
+   if(grepl("bT_IMMIEQ[1-9]",ScalesNeb[i])) {t <- 1:2; dv <- c("CIVED 1999", "ICCS 2009")}else {t <- 1:3; dv <-c("CIVED 1999", "ICCS 2009", "ICCS 2016")}
+   }
+   for (j in t) {
+      if(j==1) {
+         form <- formC1
+         Survey.design = survey.designC1
+      } else if(j==2) {
+         form <- form
+         Survey.design = survey.designC2
+      } else if(j==3) {
+         form <- form
+         Survey.design = survey.designC3
+      }
+      
+      Nelogit[[i]][[j]] <- svyglm(as.formula(paste(ScalesNeb[i], "~", form )),  
+                                data = ds_ll0ne[ds_ll0ne$cycle == paste0("C",j),], family = binomial, design = Survey.design)  
+   }
+   if (ScalesNeb[i] == "bT_ETHNEQ5") NeTlogit[[i]] <- tab_model(Nelogit[[i]][[2]],Nelogit[[i]][[3]], dv.labels = dv,
+                                                             collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ds_ll0ne$",ScalesNeb[i])))))
+   else NeTlogit[[i]] <- tab_model(Nelogit[[i]], dv.labels = dv,
+                            collapse.ci = TRUE, p.style = "stars", title = str_remove(sjlabelled::get_label(eval(parse(text=paste0("ds_ll0ne$",ScalesNeb[i])))), "Moving/|<|>|Rights and Responsibilities/|Roles women and men/"))
+   names(NeTlogit)[[i]] <- ScalesNeb[i]
+}
+rm(Nelogit)
+#--------
 ##############################################################
 ################Multinomial regression########################
 ##############################################################
 
 # library(nnet)
-# mlt_GNDREQ1 <- multinom(as.formula(paste("as.numeric(T_GNDREQ1) ~", form )),
-#                         data = ds_ll0, weights=SENWGT)
-# mlt_GNDREQ2 <- multinom(as.formula(paste("as.numeric(T_GNDREQ2) ~", form )),
-#                         data = ds_ll0, weights=SENWGT)
-# ml11 <- tab_model(mlt_GNDREQ1, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars", auto.label = FALSE,
+
+# multl <- vector(mode = 'list', length = length(Scales))
+# Tmultl <- list()
+# for(i in 1:length(Scales)){
+#    if(Scales[i] == "T_ETHNEQ5") {t <- 2:3; dv <- c( "ICCS 2009", "ICCS 2016")}
+#    else {t <- 1:3; dv <- c("CIVED 1999", "ICCS 2009", "ICCS 2016")}
+#    for (j in t) {
+#       if(j==1) {
+#          form <- formC1
+#          Survey.design = survey.designC1
+#       } else if(j==2) {
+#          form <- form
+#          Survey.design = survey.designC2
+#       } else if(j==3) {
+#          form <- form
+#          Survey.design = survey.designC3
+#       }
+#       
+#       multl[[i]][[j]] <- multinom(as.formula(paste(Scales[i], "~", form )), data = ds_ll0[ds_ll0$cycle == paste0("C",j),], design = Survey.design)  
+#    }
+#    if (Scales[i] == "T_ETHNEQ5") Tmultl[[i]] <- tab_model(multl[[i]][[2]],multl[[i]][[3]], dv.labels = dv,
+#                                                          collapse.ci = TRUE, p.style = "stars", title = sjlabelled::get_label(eval(parse(text=paste0("ds_ll0$",Scales[i])))))
+#    else Tmultl[[i]] <- tab_model(multl[[i]][[i]], dv.labels = dv,
+#                                 collapse.ci = TRUE, p.style = "stars", title = str_remove(sjlabelled::get_label(eval(parse(text=paste0("ds_ll0$",Scales[i])))), "Moving/|<|>|Rights and Responsibilities/|Roles women and men/"))
+#    names(Tmultl)[[i]] <- Scales[i]
+# }
+# rm(multl)
+# 
+# 
+# des2<-as.svrepdesign(survey.designC3, type="bootstrap" , replicates=10)
+# mfit<-withReplicates(des2, quote(coef(multinom(as.formula(paste(Scales[i], "~", form )), weights=.weights, trace=F ))))
+# mfitcoef<-data.frame(matrix(attr(attr(mfit, "var"), "means")[-1:-4], nrow=4, ncol=length(Man_cateC2C3), byrow=F))
+# names(mfitcoef)<-names(coef(ex1)[-1])
+# round(exp(mfitcoef), 3) # odds ratios
+
+# mlt_GNDREQ1C1 <- multinom(as.formula(paste("as.numeric(bT_GNDREQ1) ~", form )),
+#                         data = ds_ll0[ds_ll0$cycle == "C1",], weights=SENWGT)
+# mlt_GNDREQ1C2 <- multinom(as.formula(paste("as.numeric(bT_GNDREQ1) ~", form )),
+#                         data = ds_ll0[ds_ll0$cycle == "C2",], weights=SENWGT)
+# mlt_GNDREQ1C2 <- multinom(as.formula(paste("as.numeric(bT_GNDREQ1) ~", form )),
+#                         data = ds_ll0[ds_ll0$cycle == "C3",], weights=SENWGT)
+
+# mlt_GNDREQ2C1 <- multinom(as.formula(paste("as.numeric(bT_GNDREQ2) ~", form )),
+#                         data = ds_ll0[ds_ll0$cycle == "C1",], weights=SENWGT)
+# ml11 <- tab_model(mlt_GNDREQ1, collapse.ci = TRUE, p.style = "stars", auto.label = FALSE,
 #           dv.labels = c(str_remove(attributes(ds_ll0$T_GNDREQ1)$label, "Rights and Responsibilities/Roles women and men/")))
 # 
-# ml12 <- tab_model(mlt_GNDREQ2, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars", auto.label = FALSE,
+# ml12 <- tab_model(mlt_GNDREQ2, collapse.ci = TRUE, p.style = "stars", auto.label = FALSE,
 #           dv.labels = c(str_remove(attributes(ds_ll0$T_GNDREQ2)$label, "Rights and Responsibilities/Roles women and men/")))
-##############################################################
-###################Logistic regression########################
-##############################################################
-
-logit_IMMIEQ1C1 <- svyglm(as.formula(paste("bT_IMMIEQ1 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C1",], family = binomial, design = survey.designC1)
-logit_IMMIEQ1C2 <- svyglm(as.formula(paste("bT_IMMIEQ1 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_IMMIEQ1C3 <- svyglm(as.formula(paste("bT_IMMIEQ1 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll11 <- tab_model(logit_IMMIEQ1C1, logit_IMMIEQ1C2, logit_IMMIEQ1C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_IMMIEQ1)$label, "Moving/<Immigrants> ")))
-
-logit_IMMIEQ2C1 <- svyglm(as.formula(paste("bT_IMMIEQ2 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C1",], family = binomial, design = survey.designC1)
-logit_IMMIEQ2C2 <- svyglm(as.formula(paste("bT_IMMIEQ2 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_IMMIEQ2C3 <- svyglm(as.formula(paste("bT_IMMIEQ2 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll12 <- tab_model(logit_IMMIEQ2C1, logit_IMMIEQ2C2, logit_IMMIEQ2C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_IMMIEQ2)$label, "Moving/<Immigrants> ")))
-
-logit_IMMIEQ3C1 <- svyglm(as.formula(paste("bT_IMMIEQ3 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C1",], family = binomial, design = survey.designC1)
-logit_IMMIEQ3C2 <- svyglm(as.formula(paste("bT_IMMIEQ3 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_IMMIEQ3C3 <- svyglm(as.formula(paste("bT_IMMIEQ3 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll13 <- tab_model(logit_IMMIEQ3C1, logit_IMMIEQ3C2, logit_IMMIEQ3C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_IMMIEQ3)$label, "Moving/<Immigrants> ")))
-
-logit_IMMIEQ4C1 <- svyglm(as.formula(paste("bT_IMMIEQ4 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C1",], family = binomial, design = survey.designC1)
-logit_IMMIEQ4C2 <- svyglm(as.formula(paste("bT_IMMIEQ4 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_IMMIEQ4C3 <- svyglm(as.formula(paste("bT_IMMIEQ4 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll14 <- tab_model(logit_IMMIEQ4C1, logit_IMMIEQ4C2, logit_IMMIEQ4C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_IMMIEQ4)$label, "Moving/<Immigrants> ")))
-
-logit_IMMIEQ5C1 <- svyglm(as.formula(paste("bT_IMMIEQ5 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C1",], family = binomial, design = survey.designC1)
-logit_IMMIEQ5C2 <- svyglm(as.formula(paste("bT_IMMIEQ5 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_IMMIEQ5C3 <- svyglm(as.formula(paste("bT_IMMIEQ5 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll15 <- tab_model(logit_IMMIEQ5C1, logit_IMMIEQ5C2, logit_IMMIEQ5C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_IMMIEQ5)$label, "Moving/<Immigrants> ")))
-
-
-logit_GNDREQ1C1 <- svyglm(as.formula(paste("bT_GNDREQ1 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C1",], family = binomial, design = survey.designC1)
-logit_GNDREQ1C2 <- svyglm(as.formula(paste("bT_GNDREQ1 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_GNDREQ1C3 <- svyglm(as.formula(paste("bT_GNDREQ1 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll21 <- tab_model(logit_GNDREQ1C1, logit_GNDREQ1C2, logit_GNDREQ1C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ1)$label, "Rights and Responsibilities/Roles women and men/")))
-
-logit_GNDREQ2C1 <- svyglm(as.formula(paste("bT_GNDREQ2 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C1",], family = binomial, design = survey.designC1)
-logit_GNDREQ2C2 <- svyglm(as.formula(paste("bT_GNDREQ2 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_GNDREQ2C3 <- svyglm(as.formula(paste("bT_GNDREQ2 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll22 <- tab_model(logit_GNDREQ2C1, logit_GNDREQ2C2, logit_GNDREQ2C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ2)$label, "Rights and Responsibilities/Roles women and men/")))
-
-logit_GNDREQ3C1 <- svyglm(as.formula(paste("bT_GNDREQ3 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C1",], family = binomial, design = survey.designC1)
-logit_GNDREQ3C2 <- svyglm(as.formula(paste("bT_GNDREQ3 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_GNDREQ3C3 <- svyglm(as.formula(paste("bT_GNDREQ3 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll23 <- tab_model(logit_GNDREQ3C1, logit_GNDREQ3C2, logit_GNDREQ3C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ3)$label, "Rights and Responsibilities/Roles women and men/")))
-
-logit_GNDREQ4C1 <- svyglm(as.formula(paste("bT_GNDREQ4 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C1",], family = binomial, design = survey.designC1)
-logit_GNDREQ4C2 <- svyglm(as.formula(paste("bT_GNDREQ4 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_GNDREQ4C3 <- svyglm(as.formula(paste("bT_GNDREQ4 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll24 <- tab_model(logit_GNDREQ4C1, logit_GNDREQ4C2, logit_GNDREQ4C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ4)$label, "Rights and Responsibilities/Roles women and men/")))
-
-logit_GNDREQ5C1 <- svyglm(as.formula(paste("bT_GNDREQ5 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C1",], family = binomial, design = survey.designC1)
-logit_GNDREQ5C2 <- svyglm(as.formula(paste("bT_GNDREQ5 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_GNDREQ5C3 <- svyglm(as.formula(paste("bT_GNDREQ5 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll25 <- tab_model(logit_GNDREQ5C1, logit_GNDREQ5C2, logit_GNDREQ5C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ5)$label, "Rights and Responsibilities/Roles women and men/")))
-
-logit_GNDREQ6C1 <- svyglm(as.formula(paste("bT_GNDREQ6 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C1",], family = binomial, design = survey.designC1)
-logit_GNDREQ6C2 <- svyglm(as.formula(paste("bT_GNDREQ6 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_GNDREQ6C3 <- svyglm(as.formula(paste("bT_GNDREQ6 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll26 <- tab_model(logit_GNDREQ6C1, logit_GNDREQ6C2, logit_GNDREQ6C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ6)$label, "Rights and Responsibilities/Roles women and men/")))
-
-logit_GNDREQ7C3 <- svyglm(as.formula(paste("bT_GNDREQ7 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C3",], family = binomial, design = survey.designC3)
-ll27 <- tab_model(logit_GNDREQ7C3, collapse.ci = TRUE, p.style = "stars",
-                  dv.labels = c("ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_GNDREQ7)$label, "Rights and Responsibilities/Roles women and men/")))
-
-logit_ETHNEQ1C1 <- svyglm(as.formula(paste("bT_ETHNEQ1 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC1)
-logit_ETHNEQ1C2 <- svyglm(as.formula(paste("bT_ETHNEQ1 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_ETHNEQ1C3 <- svyglm(as.formula(paste("bT_ETHNEQ1 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC3)
-ll31 <- tab_model(logit_ETHNEQ1C1, logit_ETHNEQ1C2, logit_ETHNEQ1C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_ETHNEQ1)$label, "Rights and Responsibilities/Rights and responsibilities/")))
-
-logit_ETHNEQ2C1 <- svyglm(as.formula(paste("bT_ETHNEQ2 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC1)
-logit_ETHNEQ2C2 <- svyglm(as.formula(paste("bT_ETHNEQ2 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_ETHNEQ2C3 <- svyglm(as.formula(paste("bT_ETHNEQ2 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC3)
-ll32 <- tab_model(logit_ETHNEQ2C1, logit_ETHNEQ2C2, logit_ETHNEQ2C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_ETHNEQ2)$label, "Rights and Responsibilities/Rights and responsibilities/")))
-
-logit_ETHNEQ3C1 <- svyglm(as.formula(paste("bT_ETHNEQ3 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC1)
-logit_ETHNEQ3C2 <- svyglm(as.formula(paste("bT_ETHNEQ3 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_ETHNEQ3C3 <- svyglm(as.formula(paste("bT_ETHNEQ3 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC3)
-ll33 <- tab_model(logit_ETHNEQ3C1, logit_ETHNEQ3C2, logit_ETHNEQ3C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_ETHNEQ3)$label, "Rights and Responsibilities/Rights and responsibilities/")))
-
-logit_ETHNEQ4C1 <- svyglm(as.formula(paste("bT_ETHNEQ4 ~", formC1 )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC1)
-logit_ETHNEQ4C2 <- svyglm(as.formula(paste("bT_ETHNEQ4 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_ETHNEQ4C3 <- svyglm(as.formula(paste("bT_ETHNEQ4 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC3)
-ll34 <- tab_model(logit_ETHNEQ4C1, logit_ETHNEQ4C2, logit_ETHNEQ4C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("CIVED 1999", "ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_ETHNEQ4)$label, "Rights and Responsibilities/Rights and responsibilities/")))
-
-logit_ETHNEQ5C2 <- svyglm(as.formula(paste("bT_ETHNEQ5 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC2)
-logit_ETHNEQ5C3 <- svyglm(as.formula(paste("bT_ETHNEQ5 ~", form )), 
-                      data = ds_ll0[ds_ll0$cycle == "C2",], family = binomial, design = survey.designC3)
-ll35 <- tab_model(logit_ETHNEQ5C2, logit_ETHNEQ5C3, collapse.ci = TRUE, show.reflvl = TRUE, p.style = "stars",
-                  dv.labels = c("ICCS 2009", "ICCS 2016"),
-                  title = c(str_remove(attributes(ds_ll0$T_ETHNEQ5)$label, "Rights and Responsibilities/Rights and responsibilities/")))

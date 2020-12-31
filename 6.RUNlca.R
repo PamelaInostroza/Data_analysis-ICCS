@@ -2,8 +2,9 @@ library(poLCA)
 library(MplusAutomation)
 
 ds_lc0 <- ISC_lvR %>% 
-  dplyr::select(all_of(Id), all_of(sampleID), all_of(Scales), all_of(Scalesb), all_of(Man_cate), all_of(Man_cont)) %>% 
-  mutate(Subg = ifelse(COUNTRY %in% c("CHL", "COL", "PER", "DOM", "MEX"), "LA", "EU"))
+  dplyr::select(all_of(Id), all_of(sampleID), all_of(Scales), all_of(Scalesb), all_of(Man_cate), all_of(Man_cont))%>% 
+  mutate(group = factor(paste0(COUNTRY,as.numeric(factor(ISC_lvR$cycle)))),
+         grgnd = factor(ifelse(!is.na(T_GENDER), paste0(COUNTRY,as.numeric(factor(ISC_lvR$cycle)),T_GENDER), NA))) 
 ds_lc0$IDSTUD <- as.numeric(ds_lc0$IDSTUD)
 
 remlabclass <- function(ces){
@@ -18,15 +19,47 @@ remlabclass <- function(ces){
 }
 ds_lc0 <- remlabclass(ds_lc0)
 
-Man_cate2 <- Man_cate[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cate)]
-Man_cont2 <- Man_cont[!grepl(paste0(c("T_NISB", "T_PROTES"), collapse = "|"), Man_cont)]
+Man_cateSignf <- Man_cate[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cate)]
+Man_contSignf <- Man_cont[!grepl(paste0(c("T_CITRESP", "T_NISB", "T_PROTES"), collapse = "|"), Man_cont)]
+
+#Selection of variables to be used in models for availability
+Man_cateC2C3 <- Man_cateSignf[!grepl(paste0(c("T_HIGHEDFA", "T_HISCED"), collapse = "|"), Man_cateSignf)]
+Man_contC2C3 <- Man_contSignf[!grepl(paste0(c("T_NISB", "T_CITRESP", "T_PROTES"), collapse = "|"), Man_contSignf)]
+
+#Special selection for cycle 1 for availability
+Man_cateC1 <- Man_cateSignf[!grepl(paste0(c("T_HIGHEDEXP", "T_RELIG", "T_HISCED", "T_PROTES1"), collapse = "|"), Man_cateSignf)]
+Man_contC1 <- Man_contSignf[!grepl(paste0(c("T_HISEI", "T_NISB", "T_PROTES", "T_CNTATT", "T_ELECPART", "T_LEGACT", "T_WIDEPART", "T_CITRESP"), collapse = "|"), Man_contSignf)]
+
 Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)] #Using only scales that are in all cycles
 Scalesbc <- Scalesb[!grepl(paste0(c("bT_GNDREQ7", "bT_ETHNEQ5"), collapse = "|"), Scalesb)] #Using only scales that are in all cycles
 
 #------------------------------------------------------------
 #-----------------------Mplus code---------------------------
 #------------------------------------------------------------
-#NOMINAL scale
+
+nam<-as.matrix(table(ds_lc0$group))
+num<-data.frame(N=as.matrix(table(as.numeric(ds_lc0$group))))
+num$nam <- rownames(nam)
+num$c <- "!"
+num$num <- rownames(num)
+num[,c(3,2,1)]
+
+dataAll <- ds_lc0 %>%
+  dplyr::select(all_of(sampleID), all_of(Scalesc), IDSTUD, group, grgnd) %>%
+  mutate_if(is.factor, ~ as.numeric(.x)) %>%
+  rename_with(~ gsub("T_ETHNEQ", "ETH", .x, fixed = TRUE)) %>%
+  rename_with(~ gsub("T_GNDREQ", "GND", .x, fixed = TRUE)) %>%
+  rename_with(~ gsub("T_IMMIEQ", "IMM", .x, fixed = TRUE)) %>%
+  data.frame() 
+
+
+prepareMplusData(df = dataAll,
+                 filename = paste0("Mplus/Dta.dat"),interactive =FALSE)
+
+
+
+
+#NOMINAL SCALE
 # #----------------All scales together by cycle--------------------------------------
 # for (j in 1:3) { #input file for each cycle 1:3
 # 
@@ -100,7 +133,7 @@ Scalesbc <- Scalesb[!grepl(paste0(c("bT_GNDREQ7", "bT_ETHNEQ5"), collapse = "|")
 #     })
 # }
 
-#----------------Each scale separately by cycle--------------------------------------------
+# #----------------Each scale separately by cycle--------------------------------------------
 # for (j in 1:3) { #input file for each cycle 1:3
 # 
 #   # if(j == 1) Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)] else
@@ -256,7 +289,7 @@ for (j in 1:3) { #input file for each cycle 1:3
     })
 }
 
-#----------------Each scale separately by cycle--------------------------------------------
+# #----------------Each scale separately by cycle--------------------------------------------
 # for (j in 1:3) { #input file for each cycle 1:3
 # 
 #   # if(j == 1) Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)] else
@@ -338,7 +371,7 @@ for (j in 1:3) { #input file for each cycle 1:3
 #-------------------
 #-------------------
 ####By subgroup########
-#Nominal variables
+#Nominal SCALE
 #-------------------
 #-------------------
 # #----------------All scales together by cycle--------------------------------------
@@ -347,9 +380,10 @@ for (j in 1:3) { #input file for each cycle 1:3
   # if(j == 1) Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)] else
   #   if(j == 2) Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7"), collapse = "|"), Scales)] else
   #     Scalesc <- Scales
+  
   LAScalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)]
-  dataLA <- ds_lc0 %>%  filter(cycle == paste0("C",j)) %>%
-    dplyr::select(all_of(Id), all_of(sampleID), all_of(Scalesbc), -COUNTRY, -cycle) %>%
+  dataLA <- ds_lc0 %>%  filter(cycle == paste0("C",j) & Subg == 2) %>%
+    dplyr::select(all_of(Id), all_of(sampleID), all_of(Scalesc), -COUNTRY, -cycle) %>%
     mutate_if(is.factor, ~ as.numeric(.x)) %>%
     rename_with(~ gsub("T_ETHNEQ", "ETH", .x, fixed = TRUE)) %>%
     rename_with(~ gsub("T_GNDREQ", "GND", .x, fixed = TRUE)) %>%
@@ -358,9 +392,20 @@ for (j in 1:3) { #input file for each cycle 1:3
   prepareMplusData(df = dataLA,
                    filename = paste0("Mplus/LADtaC",j,".dat"), interactive =FALSE)
   
+  EUScalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)]
+  dataEU <- ds_lc0 %>%  filter(cycle == paste0("C",j) & Subg == 1) %>%
+    dplyr::select(all_of(Id), all_of(sampleID), all_of(Scalesc), -COUNTRY, -cycle) %>%
+    mutate_if(is.factor, ~ as.numeric(.x)) %>%
+    rename_with(~ gsub("T_ETHNEQ", "ETH", .x, fixed = TRUE)) %>%
+    rename_with(~ gsub("T_GNDREQ", "GND", .x, fixed = TRUE)) %>%
+    rename_with(~ gsub("T_IMMIEQ", "IMM", .x, fixed = TRUE)) %>%
+    data.frame()
+  prepareMplusData(df = dataEU,
+                   filename = paste0("Mplus/EUDtaC",j,".dat"), interactive =FALSE)
+  
   cas <- list()
   
-  lapply(4:7, function(k) { #input file for different number of classes
+  lapply(4:5, function(k) { #input file for different number of classes
     for(c in 1:k){
       cas[c] <- paste0("%c#",c,"%")
     }
@@ -414,7 +459,7 @@ for (j in 1:3) { #input file for each cycle 1:3
   })
 }
 
-#----------------Each scale separately by cycle--------------------------------------------
+# #----------------Each scale separately by cycle--------------------------------------------
 # for (j in 1:3) { #input file for each cycle 1:3
 # 
 #   # if(j == 1) Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)] else
@@ -493,18 +538,21 @@ for (j in 1:3) { #input file for each cycle 1:3
 # }
 
 
+###############################
 #----------------All scales/cycles together--------------------------------------
 
 # dataAll <- ds_lc0 %>%
-#   dplyr::select(all_of(Id), all_of(sampleID), all_of(Scalesc), -COUNTRY, -cycle) %>%
+#   dplyr::select(all_of(sampleID), all_of(Scalesc), IDSTUD, group, grgnd) %>%
 #   mutate_if(is.factor, ~ as.numeric(.x)) %>%
 #   rename_with(~ gsub("T_ETHNEQ", "ETH", .x, fixed = TRUE)) %>%
 #   rename_with(~ gsub("T_GNDREQ", "GND", .x, fixed = TRUE)) %>%
 #   rename_with(~ gsub("T_IMMIEQ", "IMM", .x, fixed = TRUE)) %>%
-#   data.frame()
+#   data.frame() 
+# 
+#   
 # prepareMplusData(df = dataAll,
 #                  filename = paste0("Mplus/Dta.dat"),interactive =FALSE)
-# 
+
 # cas1 <- list()
 # 
 # lapply(4:7, function(k) { #input file for different number of classes 
@@ -621,7 +669,7 @@ for (j in 1:3) { #input file for each cycle 1:3
 #   })
 # }
 
-
+# #-------------------------
 
 #runModels(target = "Mplus", replaceOutfile = "never") modifiedDate
 
@@ -629,13 +677,15 @@ for (j in 1:3) { #input file for each cycle 1:3
 
 # MAllScalesBycycleMplus <- readModels(target = "Mplus", recursive = TRUE, filefilter = "lca_c[1-3]{1}cl*")
 # MByScalesBycycleMplus <- readModels(target = "Mplus", recursive = TRUE, filefilter = "lca_c[1-3]{1}[a-z]{4}cl*")
-MBAllScalesBycycleMplus <- readModels(target = "Mplus", recursive = TRUE, filefilter = "blca_c[1-3]{1}cl*")
+# MBAllScalesBycycleMplus <- readModels(target = "Mplus", recursive = TRUE, filefilter = "blca_c[1-3]{1}cl*")
 
 # MAllScalesAllcycleMplus <- readModels(target = "Mplus", recursive = TRUE, filefilter = "lca_cl[1-3]{1}")
 # MByScalesAllcycleMplus <- readModels(target = "Mplus", recursive = TRUE, filefilter = "lca_[a-z]{4}cl*")
 
-save(MAllScalesBycycleMplus,  MByScalesBycycleMplus, MBAllScalesBycycleMplus, file="LCA_MplusModels.RData")
+# save(MAllScalesBycycleMplus,  MByScalesBycycleMplus, MBAllScalesBycycleMplus, file="LCA_MplusModels.RData")
 #     MAllScalesAllcycleMplus, MByScalesAllcycleMplus, file="LCA_MplusModels.RData")
+
+
 
 
 
@@ -643,9 +693,10 @@ save(MAllScalesBycycleMplus,  MByScalesBycycleMplus, MBAllScalesBycycleMplus, fi
 #-----------------poLCA package------------------------------
 #------------------------------------------------------------
 
-# #------ All scales by cycle
-# Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)]
-# MAllScalesbycycle <- list(c1=list(),c2=list(),c3=list())
+#------------------------------------------------------------
+# #------ All scales by cycle------------
+Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)]
+# MAllScalesbycyclev2 <- list(c1=list(),c2=list(),c3=list())
 # for (j in 1:3) { #input file for each cycle 1:3
 #   print(paste0("C",j))
 #   # if(j == 1) Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)] else
@@ -657,37 +708,16 @@ save(MAllScalesBycycleMplus,  MByScalesBycycleMplus, MBAllScalesBycycleMplus, fi
 # 
 #     f1 <- as.matrix(dplyr::select(data, starts_with("T_")))~1
 # 
-#     for(i in 4:7){ #4 to 10 classes
+#     for(i in 1:3){ #4 to 10 classes
 #       lc <- poLCA(f1, data, nclass=i, maxiter=3000,
 #                   tol=1e-5, na.rm=FALSE,
 #                   nrep=5, verbose=FALSE, calc.se=TRUE)
-#       MAllScalesbycycle[[j]][[i]] <- lc
+#       MAllScalesbycyclev2[[j]][[i]] <- lc
 #     }
 # }
-#Binomial---------------------
-Scalesbc <- Scalesb[!grepl(paste0(c("bT_GNDREQ7", "bT_ETHNEQ5"), collapse = "|"), Scalesb)]
-MBAllScalesbycycle <- list(c1=list(),c2=list(),c3=list())
-for (j in 1:3) { #input file for each cycle 1:3
-  print(paste0("C",j))
-  # if(j == 1) Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)] else
-  #   if(j == 2) Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7"), collapse = "|"), Scales)] else
-  #     Scalesc <- Scales
 
-  data <- ds_lc0 %>%  filter(cycle == paste0("C",j)) %>%
-    dplyr::select(all_of(Id), all_of(sampleID), all_of(Scalesbc), -COUNTRY, -cycle)
-
-  f1 <- as.matrix(dplyr::select(data, starts_with("bT_"))+1)~1
-
-  for(i in 4:7){ #4 to 10 classes
-    lc <- poLCA(f1, data, nclass=i, maxiter=3000,
-                tol=1e-5, na.rm=FALSE,
-                nrep=5, verbose=FALSE, calc.se=TRUE)
-    MBAllScalesbycycle[[j]][[i]] <- lc
-  }
-}
-
-#------ By scales and cycles
-# Mbyscalebycycle <- list(C1 = list(IMMI = list(), GNDR = list(), ETHN = list()),
+# #------ By scales and cycles------
+# Mbyscalebycyclev2 <- list(C1 = list(IMMI = list(), GNDR = list(), ETHN = list()),
 #                         C2 = list(IMMI = list(), GNDR = list(), ETHN = list()),
 #                         C3 = list(IMMI = list(), GNDR = list(), ETHN = list()))
 # for (j in 1:3) { #3 cycles
@@ -702,30 +732,18 @@ for (j in 1:3) { #input file for each cycle 1:3
 #     print(paste0(k))
 #     f1 <- as.matrix(dplyr::select(data, starts_with(paste0("T_",k,"EQ"))))~1
 # 
-#     for(i in 2:4){#1 to 5 classes
+#     for(i in 1:3){#1 to 5 classes
 #       lc <- poLCA(f1, data, nclass=i, maxiter=3000,
 #                   tol=1e-5, na.rm=FALSE,
 #                   nrep=5, verbose=FALSE, calc.se=TRUE, graphs = TRUE)
-#       Mbyscalebycycle[[j]][[k]][[i]] <- lc
+#       Mbyscalebycyclev2[[j]][[k]][[i]] <- lc
 #     }
 #   }
 # }
 
-#------ All scales and cycle
-# dataAllR <- ds_lc0 %>%  
-#   dplyr::select(all_of(Id), all_of(sampleID), all_of(Scalesc), -COUNTRY, -cycle)
-#     
-# f1 <- as.matrix(dplyr::select(dataAllR, starts_with("T_")))~1
-#     
-# MAllScalesCycles <- list()
-#   for(i in 4:7){ #4 to 10 classes
-#     lc <- poLCA(f1, dataAllR, nclass=i, maxiter=3000, 
-#                 tol=1e-5, na.rm=FALSE, 
-#                 nrep=5, verbose=FALSE, calc.se=TRUE) 
-#     MAllScalesCycles[[i]] <- lc
-#   }
 
-#------ By scales all cycles
+# #----------------------------------------------------------
+# #------ By scales all cycles---------
 # MAllcyclebyscale <- list(C1 = list(IMMI = list(), GNDR = list(), ETHN = list()),
 #                           C2 = list(IMMI = list(), GNDR = list(), ETHN = list()),
 #                           C3 = list(IMMI = list(), GNDR = list(), ETHN = list()))
@@ -741,10 +759,22 @@ for (j in 1:3) { #input file for each cycle 1:3
 #   }
 # }
 
+# #------ All scales and cycle-----
+# dataAllR <- ds_lc0 %>%  
+#   dplyr::select(all_of(Id), all_of(sampleID), all_of(Scalesc), -COUNTRY, -cycle)
+#     
+# f1 <- as.matrix(dplyr::select(dataAllR, starts_with("T_")))~1
+#     
+# MAllScalesCycles <- list()
+#   for(i in 4:7){ #4 to 10 classes
+#     lc <- poLCA(f1, dataAllR, nclass=i, maxiter=3000, 
+#                 tol=1e-5, na.rm=FALSE, 
+#                 nrep=5, verbose=FALSE, calc.se=TRUE) 
+#     MAllScalesCycles[[i]] <- lc
+#   }
 
-# #------------------------------------------------------------
-# #-----------------Each scale with country covariate----------
-# 
+# #----------------------------------------------------------
+# #-------Each scale with country covariate----------
 # MbyscaleCov1 <- list(C1 = list(IMMI = list(), GNDR = list(), ETHN = list()), 
 #                      C2 = list(IMMI = list(), GNDR = list(), ETHN = list()),
 #                      C3 = list(IMMI = list(), GNDR = list(), ETHN = list()))
@@ -770,9 +800,36 @@ for (j in 1:3) { #input file for each cycle 1:3
 #     }
 # }
 
+#------------------------------------------------------------
+# #--------Binomial---------------------
+# #------------------------------------------------------------
+# #------ All scales by cycle ------
+Scalesbc <- Scalesb[!grepl(paste0(c("bT_GNDREQ7", "bT_ETHNEQ5"), collapse = "|"), Scalesb)]
+MBAllScalesbycycle <- list(c1=list(),c2=list(),c3=list())
+for (j in 1:3) { #input file for each cycle 1:3
+  print(paste0("C",j))
+  # if(j == 1) Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7", "T_ETHNEQ5"), collapse = "|"), Scales)] else
+  #   if(j == 2) Scalesc <- Scales[!grepl(paste0(c("T_GNDREQ7"), collapse = "|"), Scales)] else
+  #     Scalesc <- Scales
+
+  data <- ds_lc0 %>%  filter(cycle == paste0("C",j)) %>%
+    dplyr::select(all_of(Id), all_of(sampleID), all_of(Scalesbc), -COUNTRY, -cycle)
+
+  f1 <- as.matrix(dplyr::select(data, starts_with("bT_"))+1)~1
+
+  for(i in 4:7){ #4 to 10 classes
+    lc <- poLCA(f1, data, nclass=i, maxiter=3000,
+                tol=1e-5, na.rm=FALSE,
+                nrep=5, verbose=FALSE, calc.se=TRUE)
+    MBAllScalesbycycle[[j]][[i]] <- lc
+  }
+}
+
+
+#---------------
 #load("LCA_RModels.RData")
 
-save(MAllScalesbycycle, Mbyscalebycycle, MBAllScalesbycycle, file="LCA_RModels.RData")
+#save(MAllScalesbycyclev2, Mbyscalebycyclev2,file="LCA_RModelsv2.RData")
 #     MAllScalesCycles, MAllcyclebyscale, 
 #     MbyscaleCov1, file="LCA_RModels.RData")
 

@@ -34,14 +34,18 @@ vignettes/*.pdf
 debug.log
 # Mplus
 *.inp
+*.out
 *.dat
 *.log
 # SPSS
 *.sav
 *.pdf
 *.sdb
+*.db
 *.sps
 *.sas
 *.txt
 #Figures
 *.png
+Attitudes toward equality - part 1_v1_files
+Attitudes toward equality - part 2_v1_files

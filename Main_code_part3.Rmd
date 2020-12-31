@@ -16,6 +16,12 @@ editor_options:
   chunk_output_type: console
 ---
 
+This report gives an insight of findings using Latent Class Analysis in R and Mplus software. The first was implemented using poLCA package, and the second running and extracting results with MplusAutomation package.  
+
+Different subset of data and models were applied, the list is as follows
+
+Each cycle (1999)
+
 ```{r setup, echo = FALSE, message = FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library(tidyverse)
@@ -32,7 +38,13 @@ Scales <- c(VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE
 Scalesb <- paste0("b", c(VarsToUse %>%  filter(Domain == "Scales" & Dataset %in% c("ISG","ISE")) %>% dplyr::select(VariableName) %>% na.omit() %>% pull()))
 sampleID <- c("IDJK", "IDCL", "SENWGT")
 Man_cate <- VarsToUse %>%  filter(Domain %in% "Background questionnaires" & Dataset == "ISG") %>% dplyr::select(VariableName) %>% pull()
+#Filter for variables not yet calculated
+Man_cate <- c(Man_cate[!grepl("*[1-9]$", Man_cate)], Man_cate[grepl("^T_PROTES*", Man_cate)])
+
 Man_cont <- VarsToUse %>%  filter(Domain %in% "Contextual" & Dataset == "ISG") %>% dplyr::select(VariableName) %>% pull() %>% na.omit()
+
+#Add variable separating countries from Europe and Latam
+ISC_lvR <- ISC_lvR %>% mutate(Subg = factor(ifelse(COUNTRY %in% c("CHL", "COL", "PER", "DOM", "MEX"), 2, 1), labels = c("LA", "EU")))
 
 ```  
 
